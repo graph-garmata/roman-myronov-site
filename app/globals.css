@@ -29,6 +29,28 @@
   box-sizing: border-box;
 }
 
+/* Lenis smooth scroll (recommended base styles) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 html,
 body {
   padding: 0;
@@ -261,6 +283,25 @@ a {
   transform: translateY(0);
 }
 
+/* --- Reveal-by-rows (measures wrapping text, reveals each line) --- */
+.reveal-lines {
+  position: relative;
+  display: block;
+}
+
+.reveal-lines__measure {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.reveal-lines__measure span {
+  display: inline;
+}
+
 /* --- Reveal effect (on-load intro; text slides up out of a mask) --- */
 .reveal {
   display: block;
@@ -274,7 +315,7 @@ a {
   will-change: transform;
 }
 
-.home.is-loaded .reveal__i {
+.is-loaded .reveal__i {
   transform: translateY(0);
 }
 
@@ -438,6 +479,8 @@ a {
   flex-direction: column;
   gap: 18px;
   width: 100%;
+  /* Opaque so the fixed hero never shows through gaps while scrolling. */
+  background: var(--bg);
 }
 
 .case-block--full {
@@ -460,13 +503,26 @@ a {
   width: 100%;
 }
 
-.case-block--grid img {
+.case-block__cell {
   flex: 1 1 0;
   min-width: 0;
   aspect-ratio: 4 / 5;
-  object-fit: cover;
   background: #ffffff;
+  overflow: hidden;
+}
+
+.case-block__cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
+}
+
+/* Image blocks tilt on the X axis as they enter/leave the viewport (JS-driven). */
+.case-tilt {
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .case-block--copy {
@@ -500,11 +556,54 @@ a {
   top: var(--margin);
   left: var(--margin);
   z-index: 10;
+  display: inline-flex;
+  align-items: center;
   font-size: var(--fs-heading);
   line-height: 1;
   letter-spacing: var(--track);
   color: #ffffff;
   mix-blend-mode: difference;
+}
+
+/* Back-arrow that draws in (trim-path) and pushes "Home" right on hover. */
+.case-home__arrow {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 0;
+  margin-right: 0;
+  transition: max-width 0.4s var(--ease), margin-right 0.4s var(--ease);
+}
+
+.case-home:hover .case-home__arrow {
+  max-width: 0.8em;
+  margin-right: 0.16em;
+}
+
+.case-home__arrow-icon {
+  width: 0.78em;
+  height: 0.74em;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.case-home__arrow-icon path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.45s var(--ease);
+}
+
+.case-home:hover .case-home__arrow-icon path {
+  stroke-dashoffset: 0;
+}
+
+/* Slight offset: the shaft finishes faster than the arrowhead. */
+.case-home__arrow-icon path:nth-child(1) {
+  transition-duration: 0.3s;
+}
+
+.case-home__arrow-icon path:nth-child(2) {
+  transition-duration: 0.55s;
 }
 
 /* ============================================================

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Clock from "@/components/clock";
+import Roll from "@/components/roll";
+import Reveal from "@/components/reveal";
 
 const cases = [
   "Luminar",
@@ -22,43 +24,6 @@ const navLinks = [
   { label: "Dump", href: "/dump" },
   { label: "Contact", href: "/contact" },
 ];
-
-/**
- * Roll — hover effect: the visible word slides down out of a mask while an
- * identical duplicate slides down into its place from above.
- */
-function Roll({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="roll">
-      <span className="roll__inner">
-        <span className="roll__line">{children}</span>
-        <span className="roll__line" aria-hidden>
-          {children}
-        </span>
-      </span>
-    </span>
-  );
-}
-
-/**
- * Reveal — on-load intro: content starts hidden below a mask and slides up
- * into place. `delay` staggers each row for the cascade effect.
- */
-function Reveal({
-  children,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-}) {
-  return (
-    <span className="reveal">
-      <span className="reveal__i" style={{ transitionDelay: `${delay}s` }}>
-        {children}
-      </span>
-    </span>
-  );
-}
 
 function CloseIcon() {
   return (
@@ -83,10 +48,16 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Trigger the reveal animation once, on the first client paint.
+  // Trigger the reveal animation once, on the first client paint. rAF gives a
+  // smooth start when visible; the timeout guarantees it fires even in a
+  // background tab (where rAF is paused) so text can't get stuck hidden.
   useEffect(() => {
-    const id = requestAnimationFrame(() => setLoaded(true));
-    return () => cancelAnimationFrame(id);
+    const raf = requestAnimationFrame(() => setLoaded(true));
+    const timer = setTimeout(() => setLoaded(true), 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
