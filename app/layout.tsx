@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Nav from "@/components/nav";
+import { layGrotesk, sftSerif } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Portfolio",
-  description: "A minimal portfolio site.",
+  title: "Roman Myronov — Designer and Art Director",
+  description: "Portfolio of Roman Myronov, designer and art director.",
 };
 
 export default function RootLayout({
@@ -13,11 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <Nav />
-        <main className="site-shell">{children}</main>
-      </body>
+    <html lang="en" className={`${layGrotesk.variable} ${sftSerif.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
