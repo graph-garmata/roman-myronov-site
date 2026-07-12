@@ -1,41 +1,15 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Reveal from "@/components/reveal";
 import RevealLines from "@/components/reveal-lines";
+import HomeButton from "@/components/home-button";
 import type { CaseCell, CaseStudy, CaseVideo } from "@/lib/cases";
 
 // How far outside the viewport a block still counts as "near" — used both to
 // start/stop playback (video/Vimeo) and to skip tilt math for anything far
 // off-screen. Generous so play/pause and tilt-in/out never happen abruptly.
 const NEAR_MARGIN = "800px 0px 800px 0px";
-
-function ArrowIcon() {
-  return (
-    <svg
-      className="case-home__arrow-icon"
-      viewBox="0 0 38.1928 36.3373"
-      fill="none"
-      aria-hidden
-    >
-      {/* shaft (drawn from the right toward the tip) */}
-      <path
-        d="M38.19 18.5 L3.53 18.5"
-        stroke="currentColor"
-        strokeWidth="4"
-        pathLength="1"
-      />
-      {/* arrowhead */}
-      <path
-        d="M19.69 1.42 L2.83 18.15 L19.69 34.92"
-        stroke="currentColor"
-        strokeWidth="4"
-        pathLength="1"
-      />
-    </svg>
-  );
-}
 
 /** Plays a <video> only while it's near the viewport; pauses it otherwise —
  * so having many videos on a page doesn't mean many simultaneous decodes. */
@@ -291,13 +265,8 @@ export default function CasePage({ study }: { study: CaseStudy }) {
         </div>
       </div>
 
-      {/* ---- Fixed Home: draws a back-arrow on hover, blends over imagery ---- */}
-      <Link href="/" className="case-home">
-        <span className="case-home__arrow" aria-hidden>
-          <ArrowIcon />
-        </span>
-        <span className="case-home__label">Home</span>
-      </Link>
+      {/* ---- Fixed Home: reveals on load, draws a back-arrow on hover ---- */}
+      <HomeButton />
     </div>
   );
 }

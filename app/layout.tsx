@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { layGrotesk, sftSerif } from "./fonts";
 import SmoothScroll from "@/components/smooth-scroll";
+import PageTransitionProvider from "@/components/page-transition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function RootLayout({
     <html lang="en" className={`${layGrotesk.variable} ${sftSerif.variable}`}>
       <body>
         <SmoothScroll />
-        {children}
+        <PageTransitionProvider>{children}</PageTransitionProvider>
       </body>
     </html>
   );
