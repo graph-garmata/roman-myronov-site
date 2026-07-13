@@ -307,7 +307,8 @@ a {
 
 .nav__link:hover .roll__inner,
 .nav__projects:hover .roll__inner,
-.cases__item:hover .roll__inner {
+.cases__item:hover .roll__inner,
+.about-email:hover .roll__inner {
   transform: translateY(0);
 }
 
@@ -656,6 +657,55 @@ a {
   transition-duration: 0.55s;
 }
 
+/* --- Bottom Previous/Next: reuse .case-home visuals, mirrored position --- */
+.case-home--prev {
+  top: auto;
+  bottom: var(--margin);
+}
+
+.case-home--next {
+  top: auto;
+  bottom: var(--margin);
+  left: auto;
+  right: var(--margin);
+}
+
+/* Next's arrow sits after the label, so its reveal grows/pushes leftward. */
+.case-home--next .case-home__arrow {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.case-home--next:hover .case-home__arrow {
+  max-width: 0.8em;
+  margin-left: 0.16em;
+  margin-right: 0;
+}
+
+.case-home__arrow-icon--flip {
+  transform: scaleX(-1);
+}
+
+/* ============================================================
+   Placeholder case page ("project underway")
+   ============================================================ */
+.case-behance {
+  grid-column: 5 / span 2;
+  grid-row: 2;
+  align-self: start;
+  display: inline-block;
+  margin: 0;
+  font-size: var(--fs-heading);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: var(--track);
+  color: #ffffff;
+}
+
+.case-behance:hover .roll__inner {
+  transform: translateY(0);
+}
+
 /* ============================================================
    About page (light theme, long-form, scroll-revealed)
    ============================================================ */
@@ -671,7 +721,7 @@ a {
   flex-direction: column;
   gap: 156px;
   padding-top: 161px;
-  padding-bottom: 120px;
+  padding-bottom: var(--margin);
 }
 
 /* Shared heading/body type on this page. */
@@ -683,8 +733,44 @@ a {
   letter-spacing: -0.01em;
 }
 
+/* Footnote marker: a small serif index set at the top of the line, like a
+   superscript reference. */
 .about-serif {
   font-family: var(--font-serif), Georgia, serif;
+  font-size: var(--fs-body);
+  line-height: 1;
+  vertical-align: text-top;
+}
+
+/* Footnote hover preview: scale-reveals a portrait image, anchored top-left. */
+.about-footnote {
+  position: relative;
+  cursor: default;
+}
+
+.about-footnote__image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 380px;
+  overflow: hidden;
+  transform-origin: top left;
+  transform: scale(0);
+  transition: transform 0.5s var(--ease);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.about-footnote__image.is-shown {
+  transform: scale(1);
+}
+
+.about-footnote__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .about-label {
@@ -731,8 +817,21 @@ a {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   column-gap: var(--gutter);
-  border-top: 1px solid #000000;
-  padding-top: 20px;
+}
+
+/* Trim-path style divider: draws in left-to-right on scroll. */
+.about-divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin-bottom: 20px;
+  background: #000000;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.7s var(--ease);
+}
+
+.about-divider.is-shown {
+  transform: scaleX(1);
 }
 
 .about-group__label {
@@ -760,6 +859,7 @@ a {
   font-size: var(--fs-body);
   line-height: 1;
   letter-spacing: -0.01em;
+  padding-top: 6px;
 }
 
 .about-row__text {
@@ -782,17 +882,22 @@ a {
   text-decoration: none;
 }
 
-/* --- Scroll reveal (fade + rise as each block enters view) --- */
+/* --- Scroll reveal (text slides up out of a mask as each block enters view;
+   same technique as .reveal/.reveal__i, but IntersectionObserver-triggered) --- */
 .sreveal {
-  opacity: 0;
-  transform: translateY(34px);
-  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
-  will-change: opacity, transform;
+  display: block;
+  overflow: hidden;
 }
 
-.sreveal.is-shown {
-  opacity: 1;
-  transform: none;
+.sreveal__i {
+  display: block;
+  transform: translateY(110%);
+  transition: transform 0.7s var(--ease);
+  will-change: transform;
+}
+
+.sreveal__i.is-shown {
+  transform: translateY(0);
 }
 
 /* ============================================================

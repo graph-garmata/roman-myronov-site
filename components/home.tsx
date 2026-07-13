@@ -5,18 +5,7 @@ import Link from "next/link";
 import Clock from "@/components/clock";
 import Roll from "@/components/roll";
 import Reveal from "@/components/reveal";
-
-const cases = [
-  "Luminar",
-  "Denormalized",
-  "Specialty",
-  "Prostir",
-  "Estyl",
-  "Volta",
-  "Grail",
-  "Townie",
-  "Genie",
-];
+import { caseOrder } from "@/lib/cases";
 
 const navLinks = [
   { label: "About", href: "/about" },
@@ -71,17 +60,17 @@ export default function Home() {
           </h1>
 
           <ul className="cases" aria-hidden={!open}>
-            {cases.map((name, i) => (
+            {caseOrder.map((c, i) => (
               <li
-                key={name}
+                key={c.slug}
                 style={{ transitionDelay: open ? `${0.06 + i * 0.035}s` : "0s" }}
               >
                 <Link
-                  href={`/case/${name.toLowerCase()}`}
+                  href={`/case/${c.slug}`}
                   className="cases__item"
                   tabIndex={open ? 0 : -1}
                 >
-                  <Roll>{name}</Roll>
+                  <Roll>{c.name}</Roll>
                 </Link>
               </li>
             ))}

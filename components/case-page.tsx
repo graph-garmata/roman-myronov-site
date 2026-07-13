@@ -3,7 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Reveal from "@/components/reveal";
 import RevealLines from "@/components/reveal-lines";
-import HomeButton from "@/components/home-button";
+import HomeButton, { CaseNav } from "@/components/home-button";
+import { getAdjacentCases } from "@/lib/cases";
 import type { CaseCell, CaseStudy, CaseVideo } from "@/lib/cases";
 
 // How far outside the viewport a block still counts as "near" — used both to
@@ -112,6 +113,7 @@ export default function CasePage({ study }: { study: CaseStudy }) {
   const descRef = useRef<HTMLDivElement>(null);
   const talentsRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
+  const { previous, next } = getAdjacentCases(study.slug);
 
   // The image container starts 52px below whichever is taller — the problem
   // description or the talents list. Both live in the fixed hero, so their
@@ -265,8 +267,12 @@ export default function CasePage({ study }: { study: CaseStudy }) {
         </div>
       </div>
 
-      {/* ---- Fixed Home: reveals on load, draws a back-arrow on hover ---- */}
+      {/* ---- Fixed Home + Previous/Next: reveal on load, draw an arrow on hover ---- */}
       <HomeButton />
+      <CaseNav
+        previousHref={`/case/${previous.slug}`}
+        nextHref={`/case/${next.slug}`}
+      />
     </div>
   );
 }

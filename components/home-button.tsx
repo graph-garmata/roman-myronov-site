@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Reveal from "@/components/reveal";
 
-function ArrowIcon() {
+function ArrowIcon({ flipped = false }: { flipped?: boolean }) {
   return (
     <svg
-      className="case-home__arrow-icon"
+      className={`case-home__arrow-icon${flipped ? " case-home__arrow-icon--flip" : ""}`}
       viewBox="0 0 38.1928 36.3373"
       fill="none"
       aria-hidden
@@ -42,5 +42,35 @@ export default function HomeButton() {
         <Reveal delay={0.05}>Home</Reveal>
       </span>
     </Link>
+  );
+}
+
+/**
+ * Fixed Previous/Next case nav: bottom-left and bottom-right. Same reveal
+ * behavior as Home; Previous keeps the arrow before the label, Next flips
+ * the arrow and keeps it after the label.
+ */
+export function CaseNav({
+  previousHref,
+  nextHref,
+}: {
+  previousHref: string;
+  nextHref: string;
+}) {
+  return (
+    <>
+      <Link href={previousHref} className="case-home case-home--prev">
+        <span className="case-home__arrow" aria-hidden>
+          <ArrowIcon />
+        </span>
+        <span className="case-home__label">Previous</span>
+      </Link>
+      <Link href={nextHref} className="case-home case-home--next">
+        <span className="case-home__label">Next</span>
+        <span className="case-home__arrow" aria-hidden>
+          <ArrowIcon flipped />
+        </span>
+      </Link>
+    </>
   );
 }

@@ -62,21 +62,50 @@ const luminar: CaseStudy = {
   ],
 };
 
-const cases: Record<string, CaseStudy> = {
+const studies: Record<string, CaseStudy> = {
   luminar,
 };
 
 export function getCase(slug: string): CaseStudy | undefined {
-  return cases[slug];
+  return studies[slug];
 }
 
-export function getCaseOrDefault(slug: string): CaseStudy {
-  // Only Luminar is fully designed; other slugs reuse it as a template with
-  // the requested name so every home "case" link resolves to something.
-  const found = cases[slug];
+export type CaseMeta = { slug: string; name: string; done: boolean };
+
+// Single source of truth for case order and completion status — shared by
+// the home menu and the previous/next navigation on case pages.
+export const caseOrder: CaseMeta[] = [
+  { slug: "luminar", name: "Luminar", done: true },
+  { slug: "denormalized", name: "Denormalized", done: false },
+  { slug: "specialty", name: "Specialty", done: false },
+  { slug: "prostir", name: "Prostir", done: false },
+  { slug: "estyl", name: "Estyl", done: false },
+  { slug: "volta", name: "Volta", done: false },
+  { slug: "grail", name: "Grail", done: false },
+  { slug: "townie", name: "Townie", done: false },
+  { slug: "genie", name: "Genie", done: false },
+];
+
+export function getCaseMeta(slug: string): CaseMeta {
+  const found = caseOrder.find((c) => c.slug === slug);
   if (found) return found;
-  const title = slug.charAt(0).toUpperCase() + slug.slice(1);
-  return { ...luminar, slug, name: title };
+  const name = slug.charAt(0).toUpperCase() + slug.slice(1);
+  return { slug, name, done: false };
 }
 
-export const caseSlugs = Object.keys(cases);
+/** Previous/Next only ever land on finished cases — placeholders aren't
+ * valid destinations, so both directions skip past them, wrapping around
+ * the full order. */
+export function getAdjacentCases(slug: string): {
+  previous: CaseMeta;
+  next: CaseMeta;
+} {
+  const index = caseOrder.findIndex((c) => c.slug === slug);
+  const done = caseOrder.map((c, i) => ({ ...c, i })).filter((c) => c.done);
+
+  const previous =
+    [...done].reverse().find((c) => c.i < index) ?? done[done.length - 1];
+  const next = done.find((c) => c.i > index) ?? done[0];
+
+  return { previous, next };
+}

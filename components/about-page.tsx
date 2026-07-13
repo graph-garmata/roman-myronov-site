@@ -1,39 +1,22 @@
 "use client";
 
 import HomeButton from "@/components/home-button";
-import ScrollReveal from "@/components/scroll-reveal";
+import ScrollRevealLines from "@/components/scroll-reveal-lines";
+import ScrollDivider from "@/components/scroll-divider";
+import Roll from "@/components/roll";
 
-/** Serif footnote marker, e.g. {1} — rendered in SFT Schrifted Serif inline. */
-function Mark({ n }: { n: number }) {
-  return <span className="about-serif">{`{${n}}`}</span>;
-}
-
-const bio: { q: string; a: React.ReactNode }[] = [
+const bio: { q: string; a: string }[] = [
   {
     q: "Who?",
     a: "Designer and art director, founded in 1997, started my ninja way in 2018. Since then I've made a lot of different design works, including coins and art objects, but my main expertise lies in the field of branding, web design, and motion graphics.",
   },
   {
     q: "Where?",
-    a: (
-      <>
-        I&apos;ve worked as a designer and art director at top Ukrainian
-        agencies and studios
-        <Mark n={2} />, alongside international ones
-        <Mark n={3} />.
-      </>
-    ),
+    a: "I've worked as a designer and art director at top Ukrainian agencies and studios{2}, alongside international ones{3}.",
   },
   {
     q: "Now?",
-    a: (
-      <>
-        I also co-run Denormalized
-        <Mark n={4} />, a strategy-first branding and digital design studio,
-        where we help businesses build integrated solutions from brand to final
-        product.
-      </>
-    ),
+    a: "I also co-run Denormalized{4}, a strategy-first branding and digital design studio, where we help businesses build integrated solutions from brand to final product.",
   },
   {
     q: "Next?",
@@ -62,33 +45,29 @@ const awards: { year: string; items: string[] }[] = [
 ];
 
 const teaching = {
-  label: "Projector Institute",
-  marker: 6,
+  label: "Projector Institute{6}",
   items: ["Graphic Design Medium", "Graphic Design Beginning", "Poster Design"],
 };
 
 const num = (i: number) => String(i + 1).padStart(2, "0");
 
 /** A "label + numbered list" group (used by Awards years and Teaching). */
-function ListGroup({
-  label,
-  items,
-}: {
-  label: React.ReactNode;
-  items: string[];
-}) {
+function ListGroup({ label, items }: { label: string; items: string[] }) {
   return (
     <div className="about-group">
-      <ScrollReveal className="about-group__label">
-        <p className="about-h">{label}</p>
-      </ScrollReveal>
+      <ScrollDivider />
+      <p className="about-h about-group__label">
+        <ScrollRevealLines text={label} />
+      </p>
       <div className="about-group__list">
         {items.map((item, i) => (
           <div className="about-row" key={i}>
-            <ScrollReveal className="about-row__num">{num(i)}</ScrollReveal>
-            <ScrollReveal className="about-row__text" delay={0.05}>
-              <p className="about-h">{item}</p>
-            </ScrollReveal>
+            <p className="about-h about-row__num">
+              <ScrollRevealLines text={num(i)} />
+            </p>
+            <p className="about-h about-row__text">
+              <ScrollRevealLines text={item} baseDelay={0.05} />
+            </p>
           </div>
         ))}
       </div>
@@ -104,33 +83,27 @@ export default function AboutPage() {
       <main className="about__inner">
         {/* ---- Intro ---- */}
         <section className="about-intro">
-          <ScrollReveal>
-            <h1 className="about-h">
-              Hi, I&apos;m Roman
-              <Mark n={1} />.
-            </h1>
-          </ScrollReveal>
+          <h1 className="about-h">
+            <ScrollRevealLines text="Hi, I'm Roman{1}." />
+          </h1>
 
           {bio.map((item) => (
             <div className="about-qa" key={item.q}>
-              <ScrollReveal>
-                <p className="about-label">{item.q}</p>
-              </ScrollReveal>
-              <ScrollReveal delay={0.05}>
-                <p className="about-h">{item.a}</p>
-              </ScrollReveal>
+              <p className="about-label">
+                <ScrollRevealLines text={item.q} />
+              </p>
+              <p className="about-h">
+                <ScrollRevealLines text={item.a} />
+              </p>
             </div>
           ))}
         </section>
 
         {/* ---- Awards ---- */}
         <section className="about-section">
-          <ScrollReveal className="about-section__title">
-            <h2 className="about-h">
-              Awards
-              <Mark n={5} />
-            </h2>
-          </ScrollReveal>
+          <h2 className="about-h about-section__title">
+            <ScrollRevealLines text="Awards{5}" />
+          </h2>
           <div className="about-section__body">
             {awards.map((group) => (
               <ListGroup key={group.year} label={group.year} items={group.items} />
@@ -140,32 +113,22 @@ export default function AboutPage() {
 
         {/* ---- Teaching ---- */}
         <section className="about-section">
-          <ScrollReveal className="about-section__title">
-            <h2 className="about-h">Teaching</h2>
-          </ScrollReveal>
+          <h2 className="about-h about-section__title">
+            <ScrollRevealLines text="Teaching" />
+          </h2>
           <div className="about-section__body">
-            <ListGroup
-              label={
-                <>
-                  {teaching.label}
-                  <Mark n={teaching.marker} />
-                </>
-              }
-              items={teaching.items}
-            />
+            <ListGroup label={teaching.label} items={teaching.items} />
           </div>
         </section>
 
         {/* ---- Contact ---- */}
         <section className="about-contact">
-          <ScrollReveal>
-            <h2 className="about-h">Any inquiries?</h2>
-          </ScrollReveal>
-          <ScrollReveal>
-            <a className="about-email" href="mailto:roman@denormalized.co">
-              roman@denormalized.co
-            </a>
-          </ScrollReveal>
+          <h2 className="about-h">
+            <ScrollRevealLines text="Any inquiries?" />
+          </h2>
+          <a className="about-email" href="mailto:roman@denormalized.co">
+            <Roll>roman@denormalized.co</Roll>
+          </a>
         </section>
       </main>
     </div>
