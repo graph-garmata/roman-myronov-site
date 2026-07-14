@@ -105,30 +105,32 @@ a {
   inset: 0;
   padding: var(--margin);
   overflow: hidden;
+  overflow-anchor: none;
   background: var(--bg);
   color: #ffffff;
+  transition: background-color 0.6s var(--ease), color 0.6s var(--ease);
 }
 
+/* Contact takes over in light mode. */
+.home.is-contact-open {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* A 6-column × 3-row grid, row-based like .case-hero: row 1 sizes to the
+   intro/cases/nav content, row 3 sizes to the clock/colophon content, and
+   row 2 is the flexible space between them (its top edge is where the
+   Contact takeover's clock/colophon and cta land — see components/home.tsx). */
 .home__inner {
   position: relative;
+  z-index: 2;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-/* The 6-column grid: fixed gutter, flexible column widths. */
-.grid {
   display: grid;
   grid-template-columns: repeat(var(--columns), 1fr);
+  grid-template-rows: auto 1fr auto;
   column-gap: var(--gutter);
+  row-gap: var(--gutter);
   align-items: start;
-}
-
-.home__top,
-.home__bottom {
-  position: relative;
-  z-index: 2;
 }
 
 /* --- Intro (name + role) --- */
@@ -144,14 +146,20 @@ a {
   transition: transform 0.6s var(--ease);
 }
 
-/* Name + title slide two columns to the right into cols 3–5. */
+/* Name + title slide two columns to the right into cols 3–5 (Projects open),
+   or all the way up behind the top edge (Contact open). */
 .home.is-open .intro {
   transform: translateX(var(--shift-2col));
 }
 
-/* --- Cases list (revealed when Projects is open) --- */
-.cases {
-  grid-column: 1 / span 2;
+.home.is-contact-open .intro {
+  transform: translateY(-100vh);
+}
+
+/* --- Cases list (Projects) and contact-links (Contact) — same slot/slide
+   language. Mutually exclusive, so they never show at once. --- */
+.cases,
+.contact-links {
   grid-row: 1;
   list-style: none;
   margin: 0;
@@ -162,18 +170,43 @@ a {
   pointer-events: none;
 }
 
+/* Cases attach at column 1; contact links always at column 3 (cols 3–4). */
+.cases {
+  grid-column: 1 / span 2;
+}
+
+.contact-links {
+  grid-column: 3 / span 2;
+}
+
 .home.is-open .cases {
   pointer-events: auto;
 }
 
+.home.is-contact-open .contact-links {
+  pointer-events: auto;
+}
+
 /* Each line starts fully off the left edge of the screen and slides into
-   place (staggered). No fade — position alone hides them. */
+   place (staggered). No fade — position alone hides them. Cases sit at
+   col 1, so clearing their own width + the margin hides them; the contact
+   links sit at col 3, so they must also clear the two columns in front
+   (--shift-2col) to reach the same off-screen edge. */
 .cases li {
   transform: translateX(calc(-100% - var(--margin)));
   transition: transform 0.65s var(--ease);
 }
 
+.contact-links li {
+  transform: translateX(calc(-100% - var(--margin) - var(--shift-2col)));
+  transition: transform 0.65s var(--ease);
+}
+
 .home.is-open .cases li {
+  transform: translateX(0);
+}
+
+.home.is-contact-open .contact-links li {
   transform: translateX(0);
 }
 
@@ -188,6 +221,31 @@ a {
   letter-spacing: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.cases__item-inner {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Redirect-link arrow: hidden (0-width) until hover, then draws in and
+   pushes out to the right — same language as .case-home__arrow. */
+.cases__arrow {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 0;
+  margin-left: 0;
+  transition: max-width 0.4s var(--ease), margin-left 0.4s var(--ease);
+}
+
+.cases__item:hover .cases__arrow {
+  max-width: 0.8em;
+  margin-left: 0.22em;
+}
+
+.cases__item:hover .case-home__arrow-icon path {
+  stroke-dashoffset: 0;
 }
 
 /* --- Navigation (column 6) --- */
@@ -211,7 +269,8 @@ a {
   color: inherit;
 }
 
-.nav__projects {
+/* Shared by the Projects and Contact toggle buttons in the nav column. */
+.nav__toggle {
   appearance: none;
   background: none;
   border: none;
@@ -223,15 +282,16 @@ a {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  transform: translateX(0);
   transition: transform 0.5s var(--ease);
 }
 
-/* When active, nudge the Projects tab left to give the × room. */
-.home.is-open .nav__projects {
+/* When active, nudge the tab left to give the × room. */
+.nav__toggle.is-open {
   transform: translateX(-50px);
 }
 
-.nav__projects-inner {
+.nav__toggle-inner {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -306,9 +366,9 @@ a {
 }
 
 .nav__link:hover .roll__inner,
-.nav__projects:hover .roll__inner,
+.nav__toggle:hover .roll__inner,
 .cases__item:hover .roll__inner,
-.about-email:hover .roll__inner {
+.email-link:hover .roll__inner {
   transform: translateY(0);
 }
 
@@ -355,8 +415,14 @@ a {
   letter-spacing: var(--track);
 }
 
+/* Row 3, bottom-aligned — so their resting position is the grid's bottom
+   edge, exactly where the old flex-pinned bottom band used to sit. When
+   Contact opens, an inline transform (measured against a row-2 anchor)
+   slides them up to row 2; see components/home.tsx. */
 .clock {
   grid-column: 1 / span 1;
+  grid-row: 3;
+  align-self: end;
   display: flex;
   flex-direction: column;
   transform: translateX(0);
@@ -370,10 +436,14 @@ a {
 
 .colophon {
   grid-column: 6 / span 1;
+  grid-row: 3;
+  align-self: end;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  transform: translate(0, 0);
+  transition: transform 0.6s var(--ease);
 }
 
 .colophon__text {
@@ -385,11 +455,16 @@ a {
   display: block;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.6s ease 0.3s;
+  transition: opacity 0.6s ease 0.3s, filter 0.6s var(--ease);
 }
 
 .home.is-loaded .colophon__mark {
   opacity: 1;
+}
+
+/* The mark is a near-white icon — invert it to read on Contact's light bg. */
+.home.is-contact-open .colophon__mark {
+  filter: invert(1);
 }
 
 /* --- Centered figure --- */
@@ -409,6 +484,50 @@ a {
 /* Open: recenter the figure within the last four columns (cols 3–6 ≈ 2/3). */
 .home.is-open .figure {
   transform: translate(-50%, -50%) translateX(var(--shift-1col));
+}
+
+/* Contact open: the figure is a hero element too — it slides up behind the
+   top edge along with the intro. */
+.home.is-contact-open .figure {
+  transform: translate(-50%, -50%) translateY(-100vh);
+}
+
+/* Zero-size markers at row 2, used only to measure where the clock/colophon
+   should land when Contact opens (see components/home.tsx). */
+.contact-anchor {
+  display: block;
+  width: 0;
+  height: 0;
+}
+
+/* --- Contact takeover: bottom-pinned like the clock/colophon's resting
+   spot, but absolutely positioned so it never inflates row 3's height
+   while hidden (it would otherwise force a permanent gap at the bottom of
+   the closed home screen). Slides in from the left, same language as
+   .cases — no fade, position alone hides it. --- */
+.contact-cta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(calc(-100% - var(--margin)));
+  pointer-events: none;
+  transition: transform 0.65s var(--ease);
+}
+
+.home.is-contact-open .contact-cta {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.contact-cta__label {
+  margin: 0;
+  font-size: var(--fs-heading);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
 }
 
 /* ============================================================
@@ -686,6 +805,12 @@ a {
   transform: scaleX(-1);
 }
 
+/* Down variant (CV link): the base icon points left, so a -90° turn points
+   it straight down. */
+.case-home__arrow-icon--flip.case-home__arrow-icon--down {
+  transform: rotate(-90deg);
+}
+
 /* ============================================================
    Placeholder case page ("project underway")
    ============================================================ */
@@ -873,7 +998,7 @@ a {
   gap: 20px;
 }
 
-.about-email {
+.email-link {
   display: block;
   font-size: clamp(2.5rem, 9vw, 156px);
   line-height: 1;

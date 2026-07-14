@@ -126,7 +126,7 @@ export default function AboutPage() {
           <h2 className="about-h">
             <ScrollRevealLines text="Any inquiries?" />
           </h2>
-          <a className="about-email" href="mailto:roman@denormalized.co">
+          <a className="email-link" href="mailto:roman@denormalized.co">
             <Roll>roman@denormalized.co</Roll>
           </a>
         </section>

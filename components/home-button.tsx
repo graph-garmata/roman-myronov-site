@@ -1,10 +1,16 @@
 import Link from "next/link";
 import Reveal from "@/components/reveal";
 
-function ArrowIcon({ flipped = false }: { flipped?: boolean }) {
+export function ArrowIcon({
+  flipped = false,
+  down = false,
+}: {
+  flipped?: boolean;
+  down?: boolean;
+}) {
   return (
     <svg
-      className={`case-home__arrow-icon${flipped ? " case-home__arrow-icon--flip" : ""}`}
+      className={`case-home__arrow-icon${flipped ? " case-home__arrow-icon--flip" : ""}${down ? " case-home__arrow-icon--down" : ""}`}
       viewBox="0 0 38.1928 36.3373"
       fill="none"
       aria-hidden
