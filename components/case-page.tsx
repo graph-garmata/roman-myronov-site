@@ -115,14 +115,16 @@ export default function CasePage({ study }: { study: CaseStudy }) {
   const [offset, setOffset] = useState(0);
   const { previous, next } = getAdjacentCases(study.slug);
 
-  // The image container starts 52px below whichever is taller — the problem
-  // description or the talents list. Both live in the fixed hero, so their
-  // viewport-relative bottoms are scroll-independent.
+  // The image container starts below whichever is taller — the problem
+  // description or the talents list — by 52px on desktop or 104px on mobile
+  // (matches the .case-hero mobile breakpoint in globals.css). Both live in
+  // the fixed hero, so their viewport-relative bottoms are scroll-independent.
   useLayoutEffect(() => {
     const measure = () => {
       const d = descRef.current?.getBoundingClientRect().bottom ?? 0;
       const t = talentsRef.current?.getBoundingClientRect().bottom ?? 0;
-      setOffset(Math.max(d, t) + 52);
+      const gap = window.matchMedia("(max-width: 700px)").matches ? 104 : 52;
+      setOffset(Math.max(d, t) + gap);
     };
     measure();
     window.addEventListener("resize", measure);

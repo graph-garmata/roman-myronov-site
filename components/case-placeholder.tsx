@@ -25,7 +25,7 @@ export default function CasePlaceholder({ meta }: { meta: CaseMeta }) {
           />
         </p>
 
-        <span className="case-label case-label--problem">
+        <span className="case-label case-label--found">
           <Reveal delay={0.12}>Meanwhile you can find it here</Reveal>
         </span>
         <a

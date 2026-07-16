@@ -24,6 +24,7 @@
   /* Type */
   --fs-heading: 52px;
   --fs-body: 18px;
+  --fs-display: 156px;
   --track: -0.03em;
 }
 
@@ -500,6 +501,13 @@ a {
   height: 0;
 }
 
+/* Matches .colophon's own grid-column so the measured shift (see
+   components/home.tsx) always targets where the colophon actually sits,
+   even after the mobile breakpoint moves it. */
+.contact-anchor--colophon {
+  grid-column: 6 / span 1;
+}
+
 /* --- Contact takeover: bottom-pinned like the clock/colophon's resting
    spot, but absolutely positioned so it never inflates row 3's height
    while hidden (it would otherwise force a permanent gap at the bottom of
@@ -528,6 +536,164 @@ a {
   font-weight: 400;
   line-height: 1.05;
   letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   Home — mobile (same grid tokens as .about's mobile breakpoint:
+   5 columns, 8/20 margin/gutter, 32px heading).
+
+   Projects opens differently from desktop here: there's no room to
+   slide the name sideways, so instead the figure exits off-screen to
+   the right and the name exits off-screen upward (the same upward
+   motion Contact already uses), and the cases list takes over the
+   name's now-vacated slot instead of sliding into its own column.
+   ============================================================ */
+@media (max-width: 700px) {
+  .home {
+    --margin: 8px;
+    --gutter: 20px;
+    --fs-heading: 32px;
+    --columns: 5;
+  }
+
+  .nav,
+  .colophon,
+  .contact-anchor--colophon {
+    grid-column: 4 / span 2;
+  }
+
+  /* Cases/contact-links take over the intro's exact slot (it's vacated
+     upward, not sideways, so there's no separate column to make room in). */
+  .cases,
+  .contact-links {
+    grid-column: 1 / span 3;
+  }
+
+  .contact-links li {
+    transform: translateX(calc(-100% - var(--margin)));
+  }
+
+  .home.is-open .intro {
+    transform: translateY(-100vh);
+  }
+
+  /* + 100vw guarantees a full-viewport-width exit regardless of the
+     figure's own (viewport-height-relative) rendered width. */
+  .home.is-open .figure {
+    transform: translate(calc(-50% + 100vw), -50%);
+  }
+
+  /* No sideways-shifted name to stay under, so the clock holds its spot. */
+  .home.is-open .clock {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================
+   Archive — same fixed chrome as Home (nav, clock, colophon), with a
+   duplicated, endlessly scrollable list of cases standing in for the
+   centered figure. See components/archive-list.tsx for the loop logic.
+   ============================================================ */
+.archive {
+  position: fixed;
+  inset: 0;
+  padding: var(--margin);
+  overflow: hidden;
+  overflow-anchor: none;
+  background: var(--bg);
+  color: #ffffff;
+}
+
+.archive__inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), 1fr);
+  grid-template-rows: auto 1fr auto;
+  column-gap: var(--gutter);
+  row-gap: var(--gutter);
+  align-items: start;
+}
+
+.archive-lead {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: var(--fs-heading);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: var(--track);
+}
+
+/* Spans all 3 rows (not just 1–2) so it bleeds all the way to the bottom
+   edge like the nav/clock column does, instead of stopping short above
+   row 3 and leaving a gap. min-height:0 keeps its scrollable content from
+   inflating row 1's auto height. Lenis (components/archive-list.tsx) owns
+   the actual scrolling, so overflow is hidden rather than auto. */
+.archive-list {
+  grid-column: 3 / span 3;
+  grid-row: 1 / span 3;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
+  /* Line overlap = -16px at the reference 156px display size. Held as a
+     length (not an em) so it resolves identically on the item margins and
+     the lap seam, whatever font-size those elements happen to inherit. */
+  --pitch: calc(var(--fs-display) * -0.103);
+}
+
+/* The Lenis "content" element — the direct child it scrolls. */
+.archive-list__stretch {
+  display: block;
+}
+
+.archive-list__lap {
+  display: flex;
+  flex-direction: column;
+  /* Pulls each lap up so the seam between one lap and the next reads at the
+     same tight pitch as the item overlap within a lap. */
+  margin-top: var(--pitch);
+}
+
+.archive-list__item {
+  display: block;
+  margin: 0 0 var(--pitch);
+  font-size: var(--fs-display);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: var(--track);
+  /* Scroll distortion: components/archive-list.tsx sets translateY + scaleY
+     per word inline each frame. scaleY pivots on the word's own centre so a
+     stretching word grows symmetrically in place. */
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Static page — no load-sequence to wait on, so the mark just shows. */
+.archive .colophon__mark {
+  opacity: 1;
+}
+
+@media (max-width: 700px) {
+  .archive {
+    --margin: 8px;
+    --gutter: 20px;
+    --fs-heading: 32px;
+    --fs-display: 44px;
+    --columns: 5;
+  }
+
+  /* Same slot as .intro on Home mobile — leaves columns 4–5 clear for nav. */
+  .archive-lead {
+    grid-column: 1 / span 3;
+  }
+
+  .archive-list {
+    grid-column: 1 / span 5;
+    grid-row: 2;
+  }
 }
 
 /* ============================================================
@@ -588,6 +754,14 @@ a {
 }
 
 .case-label--problem {
+  grid-column: 3 / span 2;
+  text-align: right;
+}
+
+/* Placeholder page's "Meanwhile you can find it here" — same slot as
+   case-label--problem, but stays side-by-side with .case-behance on
+   mobile instead of stacking (see the mobile breakpoint below). */
+.case-label--found {
   grid-column: 3 / span 2;
   text-align: right;
 }
@@ -832,6 +1006,101 @@ a {
 }
 
 /* ============================================================
+   Case study page — mobile (5 columns, 8/20 margin/gutter, 32px
+   heading; same tokens as .home/.about's mobile breakpoint).
+
+   The hero drops from a fixed 6×3 grid to two 5-column rows
+   (name+scope, then talents) followed by a full-width, stacked
+   problem block — label above text, instead of desktop's
+   side-by-side columns. In-page copy blocks (.case-block--copy)
+   get that same label-above-text treatment. Imagery/video blocks
+   need no overrides — width:100% + aspect-ratio already scales
+   them down in place.
+   ============================================================ */
+@media (max-width: 700px) {
+  .case {
+    --margin: 8px;
+    --gutter: 20px;
+    --fs-heading: 32px;
+  }
+
+  .case-hero {
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: none;
+    /* Without this, the container's fixed (100dvh) height stretches the
+       auto rows to fill leftover space instead of packing to content. */
+    align-content: start;
+    row-gap: 52px;
+    /* .case-home sits above this (fixed, own margin + line-height), so the
+       104px gap to the name is measured from its bottom, not the viewport
+       edge: margin + heading line-height (1) + 104px. */
+    padding-top: calc(var(--margin) + var(--fs-heading) + 104px);
+  }
+
+  .case-name,
+  .case-scope,
+  .case-label,
+  .case-talents,
+  .case-desc,
+  .case-behance {
+    grid-row: auto;
+  }
+
+  .case-name {
+    grid-column: 1 / span 2;
+  }
+
+  .case-scope {
+    grid-column: 3 / span 3;
+  }
+
+  .case-label--talents {
+    grid-column: 1 / span 2;
+    text-align: left;
+  }
+
+  .case-talents {
+    grid-column: 3 / span 3;
+  }
+
+  .case-label--problem {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .case-desc {
+    grid-column: 1 / -1;
+    /* Row-gap (52px) matches the gap between the hero's other groups; this
+       label needs to sit closer (20px) to the text right below it. */
+    margin-top: -32px;
+  }
+
+  /* Placeholder page: label + Behance link stay side-by-side, like the
+     talents row, instead of stacking like the problem block. */
+  .case-label--found {
+    grid-column: 1 / span 2;
+    text-align: left;
+  }
+
+  .case-behance {
+    grid-column: 3 / span 3;
+  }
+
+  /* In-page copy blocks: same label-above-text stacking as the hero's
+     problem block, instead of desktop's side-by-side columns. */
+  .case-block--copy {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 2rem var(--margin);
+  }
+
+  .case-block__label {
+    text-align: left;
+  }
+}
+
+/* ============================================================
    About page (light theme, long-form, scroll-revealed)
    ============================================================ */
 .about {
@@ -928,6 +1197,15 @@ a {
 
 .about-section__title {
   grid-column: 1 / span 2;
+  align-self: start;
+  position: sticky;
+  top: 96px;
+  /* Sticky naturally releases only once the row's true bottom (the last
+     award/teaching line) reaches this element's own bottom edge — which
+     means it overlaps that last line right up until release. The invisible
+     padding pads out that edge so it lets go earlier, before the tail end
+     of the list scrolls under it. */
+  padding-bottom: 140px;
 }
 
 .about-section__body {
@@ -1000,11 +1278,14 @@ a {
 
 .email-link {
   display: block;
-  font-size: clamp(2.5rem, 9vw, 156px);
+  font-size: clamp(3.25rem, 9vw, 156px);
   line-height: 1;
   letter-spacing: -0.04em;
   color: inherit;
   text-decoration: none;
+  /* No spaces to break at, so narrow (mobile) widths need an explicit
+     permission to wrap mid-word instead of overflowing. */
+  overflow-wrap: break-word;
 }
 
 /* --- Scroll reveal (text slides up out of a mask as each block enters view;
@@ -1023,6 +1304,80 @@ a {
 
 .sreveal__i.is-shown {
   transform: translateY(0);
+}
+
+/* --- About page: mobile (5 columns, 8/20 margin/gutter, 32px heading) ---
+   Overriding the custom properties on .about cascades the margin/gutter/
+   heading-size change to every rule below that already reads them (the
+   grid track counts are hardcoded per layout, so those still need explicit
+   overrides here). */
+@media (max-width: 700px) {
+  .about {
+    --margin: 8px;
+    --gutter: 20px;
+    --fs-heading: 32px;
+  }
+
+  .about__inner {
+    gap: 152px;
+    padding-top: 100px;
+  }
+
+  .about-section__title {
+    top: 72px;
+  }
+
+  .about-section {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* Label above list instead of beside it. */
+  .about-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .about-group__list {
+    gap: 20px;
+  }
+
+  /* Number above text instead of beside it. */
+  .about-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .about-row__num {
+    text-align: left;
+    padding: 6px 0;
+  }
+
+  .about-contact {
+    gap: 12px;
+  }
+
+  /* The hover flip is meaningless on touch, and the email now wraps across
+     lines — show the plain (real, accessible) label instead of the roll. */
+  .email-link .roll {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .email-link .roll__inner {
+    display: block;
+    transform: none;
+  }
+
+  .email-link .roll__line:first-child {
+    height: auto;
+  }
+
+  .email-link .roll__line:last-child {
+    display: none;
+  }
 }
 
 /* ============================================================

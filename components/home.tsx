@@ -323,8 +323,8 @@ export default function Home() {
         <span
           ref={colophonAnchorRef}
           aria-hidden
-          className="contact-anchor"
-          style={{ gridColumn: "6 / span 1", gridRow: 2, alignSelf: "start" }}
+          className="contact-anchor contact-anchor--colophon"
+          style={{ gridRow: 2, alignSelf: "start" }}
         />
 
         <div className="contact-cta" aria-hidden={!contactOpen}>
