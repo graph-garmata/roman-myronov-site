@@ -11,8 +11,16 @@ import Lenis from "lenis";
 export default function SmoothScroll() {
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => 1 - Math.pow(1 - t, 3),
+      // `lerp` rather than `duration` + `easing`. A duration-based tween
+      // restarts from scratch on every wheel event, and Safari's trackpad
+      // momentum delivers a long tail of them — so the scroll target kept
+      // being re-set mid-flight, which read as sticking and tugging. Chrome
+      // fires coarser wheel events, which is why it only showed in Safari.
+      // lerp smooths continuously toward the target instead, so a stream of
+      // small deltas is absorbed rather than restarting the animation.
+      // Lower = looser and slower, higher = snappier; 0.1 is close to the
+      // old coast without the re-targeting.
+      lerp: 0.1,
     });
 
     let rafId = 0;

@@ -7,14 +7,21 @@ import Reveal from "@/components/reveal";
 import ArchiveList from "@/components/archive-list";
 
 const navLinks = [
-  { label: "Projects", href: "/" },
+  // Projects and Contact open Home's matching panels on arrival (the same
+  // ones the hero opens); Home reads these flags on load — see home.tsx.
+  { label: "Projects", href: "/?projects=1" },
   { label: "About", href: "/about" },
   { label: "Archive", href: "/archive" },
   { label: "Dump", href: "/dump" },
-  { label: "Contact", href: "mailto:roman@denormalized.co" },
+  { label: "Contact", href: "/?contact=1" },
 ];
 
-const archiveItems = ["Linen", "wcf2023", "Boko", "Specialty"];
+const archiveItems = [
+  { name: "Linen" },
+  { name: "wcf2023" },
+  { name: "Boko" },
+  { name: "Specialty" },
+];
 
 export default function ArchivePage() {
   return (

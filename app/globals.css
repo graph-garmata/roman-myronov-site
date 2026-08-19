@@ -58,6 +58,11 @@
   pointer-events: auto;
 }
 
+/* White wipe when heading to Home's Contact takeover (a light section). */
+.curtain--light {
+  background: #ffffff;
+}
+
 /* Lenis smooth scroll (recommended base styles) */
 html.lenis,
 html.lenis body {
@@ -84,6 +89,22 @@ html,
 body {
   padding: 0;
   margin: 0;
+  /* Nothing on the site scrolls sideways by design. Needed because 3D-
+     tilted elements (.case-tilt's perspective+rotateX) project a bounding
+     box wider than their own box, which otherwise makes the whole
+     document horizontally scrollable and pulls normal-flow content out
+     from under the case page's fixed hero.
+
+     `clip` rather than `hidden`: with overflow-y visible, an overflow-x of
+     `hidden` computes overflow-y to `auto`, making both html and body
+     scroll containers. Nested scrollers take scrolling off the fast path.
+     `clip` cuts the overflow without creating a scroll box at all.
+
+     The `hidden` first is the fallback for Safari < 16, which doesn't know
+     `clip` and would otherwise drop the declaration entirely and let the
+     page scroll sideways. */
+  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--bg);
   color: #ffffff;
   font-family: var(--font-lay), ui-sans-serif, system-ui, -apple-system,
@@ -155,6 +176,12 @@ a {
 
 .home.is-contact-open .intro {
   transform: translateY(-100vh);
+}
+
+/* Archive open: the name slides fully off to the left (not faded), clearing
+   the top-left for the archive's "A collection…" lead that takes its place. */
+.home.is-archive-open .intro {
+  transform: translateX(calc(-100% - 40vw));
 }
 
 /* --- Cases list (Projects) and contact-links (Contact) — same slot/slide
@@ -247,6 +274,39 @@ a {
 
 .cases__item:hover .case-home__arrow-icon path {
   stroke-dashoffset: 0;
+}
+
+/* Case hover preview: scale-reveals a still that tracks the cursor, its
+   top-left corner pinned to the pointer (same scale-in language as
+   .about-footnote__image, but position follows the mouse instead of a
+   fixed anchor — see the mousemove handler in home.tsx). 1920×1200
+   proportioned — width fixed, height follows via aspect-ratio. A static
+   image for now; will become a switching-image/video sequence later.
+   Cases without a cover yet still show the frame, just empty. */
+.case-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 320px;
+  aspect-ratio: 1920 / 1200;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transform-origin: top left;
+  transform: scale(0);
+  transition: transform 0.5s var(--ease);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.case-preview.is-shown {
+  transform: scale(1);
+}
+
+.case-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* --- Navigation (column 6) --- */
@@ -369,6 +429,7 @@ a {
 .nav__link:hover .roll__inner,
 .nav__toggle:hover .roll__inner,
 .cases__item:hover .roll__inner,
+.archive-list__item:hover .roll__inner,
 .email-link:hover .roll__inner {
   transform: translateY(0);
 }
@@ -479,7 +540,7 @@ a {
   z-index: 1;
   pointer-events: none;
   user-select: none;
-  transition: transform 0.6s var(--ease);
+  transition: transform 0.6s var(--ease), opacity 0.5s var(--ease);
 }
 
 /* Open: recenter the figure within the last four columns (cols 3–6 ≈ 2/3). */
@@ -491,6 +552,43 @@ a {
    top edge along with the intro. */
 .home.is-contact-open .figure {
   transform: translate(-50%, -50%) translateY(-100vh);
+}
+
+/* Archive open: the figure slides fully off the left edge with the name
+   (moving, not fading). */
+.home.is-archive-open .figure {
+  transform: translate(-50%, -50%) translateX(-100vw);
+}
+
+/* Archive's lead line: sits in the intro's top-left slot. It's empty until
+   Archive opens, when its <Reveal> mounts and plays the shared mask reveal. */
+.archive-lead-home {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: var(--fs-heading);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: var(--track);
+  pointer-events: none;
+}
+
+/* ---- Archive panel: the /archive list embedded on Home. It spans cols 3–5
+   and the full height, leaving col 6 (nav + colophon) clear. The panel stays
+   put; the entrance is per-item (each word slides in from the right, staggered
+   — see .archive-list__item and components/archive-list.tsx), so the words
+   arrive one by one rather than as a block. ---- */
+.archive-panel {
+  grid-column: 3 / span 3;
+  grid-row: 1 / -1;
+  min-height: 0;
+  align-self: stretch;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.home.is-archive-open .archive-panel {
+  pointer-events: auto;
 }
 
 /* Zero-size markers at row 2, used only to measure where the clock/colophon
@@ -587,6 +685,17 @@ a {
   .home.is-open .clock {
     transform: translateX(0);
   }
+
+  /* Archive takes the full width on mobile and the name clears upward, same
+     as Projects. */
+  .archive-panel {
+    grid-column: 1 / span 5;
+    grid-row: 1 / -1;
+  }
+
+  .home.is-archive-open .intro {
+    transform: translateY(-100vh);
+  }
 }
 
 /* ============================================================
@@ -664,11 +773,14 @@ a {
   font-weight: 400;
   line-height: 1;
   letter-spacing: var(--track);
-  /* Scroll distortion: components/archive-list.tsx sets translateY + scaleY
-     per word inline each frame. scaleY pivots on the word's own centre so a
-     stretching word grows symmetrically in place. */
-  transform-origin: center center;
+  cursor: pointer;
   will-change: transform;
+  /* Entrance: each word rests off to the right (this initial value) and is
+     slid to translateX(0) inline by components/archive-list.tsx when the list
+     opens — staggered by transition-delay so they arrive one by one. The
+     scroller's overflow:hidden clips them while parked off-screen. */
+  transform: translateX(110%);
+  transition: transform 0.5s var(--ease);
 }
 
 /* Static page — no load-sequence to wait on, so the mark just shows. */
@@ -807,8 +919,15 @@ a {
 
 .case-block--full {
   width: 100%;
+  /* Anchors the sound toggle on films that have audio. */
+  position: relative;
+  /* Fallback only — blocks carry their source's ratio inline (see
+     lib/cases.ts), so height varies with the material and nothing is
+     cropped or letterboxed. */
   aspect-ratio: 16 / 10;
-  background: #ffffff;
+  /* Matches the page, so a not-yet-loaded image reads as a gap rather than
+     a white stripe. */
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -825,17 +944,55 @@ a {
   display: flex;
   gap: 18px;
   width: 100%;
-  /* Same locked ratio as a single full-width block, so the whole grid
-     scales uniformly on resize instead of reshaping around the fixed gap. */
-  aspect-ratio: 16 / 10;
+  /* Height comes from the cells, which each hold their own source ratio.
+     Cells in a pair share a ratio, so the row still reads as one unit. */
+  align-items: flex-start;
 }
 
 .case-block__cell {
   flex: 1 1 0;
   min-width: 0;
-  height: 100%;
-  background: #ffffff;
+  background: var(--bg);
   overflow: hidden;
+  position: relative;
+}
+
+/* Sound toggle, shown only on films that carry an audio track. Sits inside
+   the block so it travels with the tilt rather than floating over it. */
+.case-sound {
+  position: absolute;
+  right: var(--gutter, 18px);
+  bottom: var(--gutter, 18px);
+  z-index: 2;
+  appearance: none;
+  border: none;
+  margin: 0;
+  padding: 0.55em 1.1em;
+  font: inherit;
+  font-size: var(--fs-small, 0.8rem);
+  line-height: 1;
+  letter-spacing: var(--track);
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.25s ease, background-color 0.25s ease;
+}
+
+.case-sound:hover,
+.case-sound:focus-visible {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 700px) {
+  .case-sound {
+    right: 12px;
+    bottom: 12px;
+  }
 }
 
 .case-block__cell img,
@@ -865,6 +1022,12 @@ a {
 .case-tilt {
   transform-origin: center center;
   backface-visibility: hidden;
+}
+
+/* Toggled by the IntersectionObserver in case-page.tsx. Promoting only the
+   blocks currently in play, rather than all of them for the life of the
+   page, keeps the number of live compositor layers small. */
+.case-tilt.is-near {
   will-change: transform;
 }
 
@@ -1390,6 +1553,9 @@ a {
 }
 
 .site-header {
+  position: relative;
+  z-index: 10;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
@@ -1498,4 +1664,89 @@ main h1 {
   font-size: 0.9rem;
   display: inline-block;
   margin-bottom: 1.5rem;
+}
+
+/* -----------------------------------------------------------------------
+   Dump page — a full-bleed pile of draggable images / short videos. Position,
+   rotation and size are randomised on the frontend (components/dump-scatter.tsx);
+   nothing about layout is stored in Sanity. The canvas is fixed to the viewport
+   and sits below the nav (see .site-header z-index above).
+   ----------------------------------------------------------------------- */
+.dump-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  touch-action: none; /* let Motion own pointer/touch gestures */
+}
+
+.dump-item {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+}
+.dump-item:active {
+  cursor: grabbing;
+}
+.dump-item img,
+.dump-item video {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none; /* the wrapper handles pointer input */
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+}
+
+.dump-canvas--empty {
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Lightbox. Double-clicking an item opens it here: centred, unrotated and at
+   the asset's full resolution (dump items are Sanity *file* assets, so the URL
+   already serves the original). Sits above .case-home (z 10) so the whole page
+   behind it dims, not just the pile. */
+.dump-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+
+.dump-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  display: grid;
+  place-items: center;
+  padding: var(--margin);
+  /* Clicks pass through to the backdrop so anywhere outside the media
+     dismisses; the media itself opts back in below. */
+  pointer-events: none;
+}
+
+/* The element that actually animates: it starts sitting exactly on the
+   thumbnail (transform supplied by computeFlight in dump-scatter.tsx) and
+   travels to the identity transform here — centred and straight. */
+.dump-focus__flier {
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Keep these in sync with FOCUS_MAX_W / FOCUS_MAX_H in dump-scatter.tsx —
+   the flight is derived from them rather than measured. */
+.dump-focus img,
+.dump-focus video {
+  display: block;
+  max-width: min(88vw, 1600px);
+  max-height: 86vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  pointer-events: auto;
+  cursor: zoom-out;
 }

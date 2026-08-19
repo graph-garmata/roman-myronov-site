@@ -7,15 +7,33 @@ import HomeButton, { CaseNav } from "@/components/home-button";
 import { getAdjacentCases } from "@/lib/cases";
 import type { CaseCell, CaseStudy, CaseVideo } from "@/lib/cases";
 
-// How far outside the viewport a block still counts as "near" — used both to
-// start/stop playback (video/Vimeo) and to skip tilt math for anything far
-// off-screen. Generous so play/pause and tilt-in/out never happen abruptly.
+// How far outside the viewport a block still counts as "near" — used to skip
+// tilt math for anything far off-screen. Generous so tilt-in/out is never
+// abrupt; it costs nothing to keep a block eligible, since the tilt loop only
+// writes when the angle actually changes.
 const NEAR_MARGIN = "800px 0px 800px 0px";
 
-/** Plays a <video> only while it's near the viewport; pauses it otherwise —
- * so having many videos on a page doesn't mean many simultaneous decodes. */
+// Mounting a Vimeo embed is a burst: the iframe loads Vimeo's player, fetches
+// a manifest and spins up a decoder. That happens well before the block is on
+// screen, so the burst doesn't land as you scroll into it.
+const VIMEO_MOUNT_MARGIN = "1200px 0px 1200px 0px";
+
+// Playback, by contrast, runs only while a block is actually in the viewport —
+// no margin at all. Nothing decodes off screen, so at most one or two films are
+// ever running instead of every one you happen to be scrolling past. Applies to
+// self-hosted <video> and Vimeo alike.
+const PLAY_MARGIN = "0px";
+
+// How long a mounted embed survives after leaving the mount band, so a scroll
+// that overshoots and comes straight back doesn't have to refetch it.
+const RECLAIM_MS = 5000;
+
+/** Plays a <video> only while it's actually in the viewport; pauses it
+ * otherwise — so having many videos on a page doesn't mean many simultaneous
+ * decodes. The poster holds the frame until it starts. */
 function VideoCell({ video }: { video: CaseVideo }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
 
   useEffect(() => {
     const el = ref.current;
@@ -23,35 +41,57 @@ function VideoCell({ video }: { video: CaseVideo }) {
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) el.play().catch(() => {});
-        else el.pause();
+        else {
+          el.pause();
+          // Scrolling away is the same as turning it off — otherwise sound
+          // jumps back at you when the block returns.
+          setMuted(true);
+        }
       },
-      { rootMargin: NEAR_MARGIN }
+      { rootMargin: PLAY_MARGIN }
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return (
-    <video
-      ref={ref}
-      className="case-video"
-      poster={video.poster}
-      loop
-      muted
-      playsInline
-      preload="metadata"
-      aria-label={video.alt ?? ""}
-    >
-      <source src={video.webm} type="video/webm" />
-      <source src={video.mp4} type="video/mp4" />
-    </video>
+    <>
+      <video
+        ref={ref}
+        className="case-video"
+        poster={video.poster}
+        loop
+        // Autoplay is only allowed while muted, so playback always starts
+        // silent; `sound` films can then be unmuted by the viewer.
+        muted={muted}
+        playsInline
+        preload="metadata"
+        aria-label={video.alt ?? ""}
+      >
+        <source src={video.webm} type="video/webm" />
+        <source src={video.mp4} type="video/mp4" />
+      </video>
+      {video.sound && (
+        <button
+          type="button"
+          className="case-sound"
+          aria-pressed={!muted}
+          aria-label={muted ? "Unmute video" : "Mute video"}
+          onClick={() => setMuted((m) => !m)}
+        >
+          {muted ? "Sound on" : "Sound off"}
+        </button>
+      )}
+    </>
   );
 }
 
-/** Vimeo background-loop embed. The Player SDK (and the iframe it injects)
- * is only created once the block is near the viewport, then paused/resumed
- * on visibility — so far-off or unopened case pages never load Vimeo's
- * embed JS or start a video stream for nothing. */
+/** Vimeo background-loop embed. Mounting and playback are driven by two
+ * separate bands (see VIMEO_MOUNT_MARGIN / PLAY_MARGIN): the iframe is
+ * built well ahead of arrival so its setup cost lands off screen, playback
+ * runs only while the block is actually in the viewport, and the embed is
+ * torn out of the document once it's comfortably away. A case page that's
+ * never opened still loads no Vimeo JS at all. */
 function VimeoCell({ vimeoId, alt }: { vimeoId: string; alt?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -59,43 +99,69 @@ function VimeoCell({ vimeoId, alt }: { vimeoId: string; alt?: string }) {
     const el = ref.current;
     if (!el) return;
     let cancelled = false;
-    let visible = false;
+    let mounted = false;
+    let wantPlay = false;
     let loading = false;
     let player: import("@vimeo/player").default | null = null;
+    let reclaim = 0;
 
-    const io = new IntersectionObserver(
+    const create = () => {
+      if (player || loading) return;
+      loading = true;
+      import("@vimeo/player").then(({ default: Player }) => {
+        loading = false;
+        // The user may have scrolled clear of the mount band while the SDK
+        // was loading — don't mount an embed nobody is heading toward.
+        if (cancelled || !mounted) return;
+        player = new Player(el, {
+          id: Number(vimeoId),
+          background: true,
+          autoplay: wantPlay,
+          loop: true,
+          muted: true,
+        });
+        // `background` implies autoplay, so hold it until the play band.
+        if (!wantPlay) player.pause().catch(() => {});
+      });
+    };
+
+    // Tears the iframe out of the document, not just the playback. Pausing
+    // leaves a live cross-origin subframe behind, and the compositor pays
+    // for every one of those on every scroll — with a dozen films on the
+    // page that is the difference between smooth and sticky.
+    const teardown = () => {
+      const p = player;
+      player = null;
+      p?.destroy().catch(() => {});
+    };
+
+    const mountIo = new IntersectionObserver(
       ([entry]) => {
-        visible = entry.isIntersecting;
-        if (visible) {
-          if (player) {
-            player.play().catch(() => {});
-          } else if (!loading) {
-            loading = true;
-            import("@vimeo/player").then(({ default: Player }) => {
-              loading = false;
-              // The user may have scrolled away while the SDK was loading —
-              // re-check visibility before starting playback.
-              if (cancelled) return;
-              player = new Player(el, {
-                id: Number(vimeoId),
-                background: true,
-                autoplay: visible,
-                loop: true,
-                muted: true,
-              });
-            });
-          }
-        } else {
-          player?.pause().catch(() => {});
-        }
+        mounted = entry.isIntersecting;
+        window.clearTimeout(reclaim);
+        if (mounted) create();
+        else reclaim = window.setTimeout(teardown, RECLAIM_MS);
       },
-      { rootMargin: NEAR_MARGIN }
+      { rootMargin: VIMEO_MOUNT_MARGIN }
     );
-    io.observe(el);
+
+    const playIo = new IntersectionObserver(
+      ([entry]) => {
+        wantPlay = entry.isIntersecting;
+        if (wantPlay) player?.play().catch(() => {});
+        else player?.pause().catch(() => {});
+      },
+      { rootMargin: PLAY_MARGIN }
+    );
+
+    mountIo.observe(el);
+    playIo.observe(el);
     return () => {
       cancelled = true;
-      io.disconnect();
-      player?.destroy();
+      window.clearTimeout(reclaim);
+      mountIo.disconnect();
+      playIo.disconnect();
+      teardown();
     };
   }, [vimeoId]);
 
@@ -155,6 +221,11 @@ export default function CasePage({ study }: { study: CaseStudy }) {
           const el = entry.target as HTMLElement;
           if (entry.isIntersecting) near.add(el);
           else near.delete(el);
+          // Only pay for a compositor layer while the block is in play —
+          // a permanent will-change on every block means the browser holds
+          // a texture for the whole page, and the tall screenshot blocks
+          // are big enough for that to hurt.
+          el.classList.toggle("is-near", entry.isIntersecting);
         });
       },
       { rootMargin: NEAR_MARGIN }
@@ -164,6 +235,8 @@ export default function CasePage({ study }: { study: CaseStudy }) {
     const REVEAL_MS = 950;
     const start = performance.now();
     let raf = 0;
+    // Last angle written per block, so we can skip no-op style writes.
+    const written = new WeakMap<HTMLElement, string>();
 
     const update = () => {
       raf = 0;
@@ -172,17 +245,29 @@ export default function CasePage({ study }: { study: CaseStudy }) {
       const eased = 1 - Math.pow(1 - rt, 3);
       const revealing = rt < 1;
 
+      // Two passes. Reading a rect after writing a transform forces a
+      // synchronous style recalc, so interleaving them costs one layout
+      // flush per block per frame — fine at five blocks, not at thirty.
+      const active: { block: HTMLElement; isRevealBlock: boolean; top: number; height: number }[] = [];
       blocks.forEach((block) => {
         const isRevealBlock = block.dataset.reveal !== undefined;
         if (!near.has(block) && !(isRevealBlock && revealing)) return;
         const r = block.getBoundingClientRect();
-        const progress = Math.max(
-          -1,
-          Math.min(1, (r.top + r.height / 2 - vh / 2) / vh)
-        );
+        active.push({ block, isRevealBlock, top: r.top, height: r.height });
+      });
+
+      active.forEach(({ block, isRevealBlock, top, height }) => {
+        const progress = Math.max(-1, Math.min(1, (top + height / 2 - vh / 2) / vh));
         let angle = progress * 6;
         if (isRevealBlock) angle = 90 * (1 - eased) + angle * eased;
-        block.style.transform = `perspective(1400px) rotateX(${angle.toFixed(2)}deg)`;
+        // 0.1° is under the visible threshold, and quantizing lets us drop
+        // writes entirely when the angle hasn't really moved. Each write
+        // re-rasterizes the block, which is expensive when it wraps a
+        // cross-origin Vimeo iframe.
+        const next = `perspective(1400px) rotateX(${angle.toFixed(1)}deg)`;
+        if (written.get(block) === next) return;
+        written.set(block, next);
+        block.style.transform = next;
       });
 
       // Keep animating through the first-block entrance regardless of
@@ -243,6 +328,8 @@ export default function CasePage({ study }: { study: CaseStudy }) {
                   className="case-block case-block--full case-tilt"
                   key={i}
                   data-reveal={i === 0 ? "" : undefined}
+                  // Inline so it beats the 16:10 fallback in the stylesheet.
+                  style={block.ratio ? { aspectRatio: block.ratio } : undefined}
                 >
                   <Media cell={block.cell} />
                 </div>
@@ -252,7 +339,13 @@ export default function CasePage({ study }: { study: CaseStudy }) {
               return (
                 <div className="case-block case-block--grid case-tilt" key={i}>
                   {block.cells.map((cell, j) => (
-                    <div className="case-block__cell" key={j}>
+                    <div
+                      className="case-block__cell"
+                      key={j}
+                      // Each cell holds its own source shape; the row's height
+                      // follows from the cells rather than being locked ahead.
+                      style={cell.ratio ? { aspectRatio: cell.ratio } : undefined}
+                    >
                       <Media cell={cell} />
                     </div>
                   ))}

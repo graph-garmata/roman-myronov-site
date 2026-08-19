@@ -1,17 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Clock from "@/components/clock";
 import Roll from "@/components/roll";
 import Reveal from "@/components/reveal";
 import { ArrowIcon } from "@/components/home-button";
+import ArchiveList from "@/components/archive-list";
 import { caseOrder } from "@/lib/cases";
 
-const navLinks = [
-  { label: "About", href: "/about" },
-  { label: "Archive", href: "/archive" },
-  { label: "Dump", href: "/dump" },
+// Archive is no longer its own page — it opens as a right-side panel here.
+// (The /archive route is kept as a fallback for now.)
+const archiveItems = [
+  { name: "Linen" },
+  { name: "wcf2023" },
+  { name: "Boko" },
+  { name: "Specialty" },
 ];
 
 const contactLinks: {
@@ -55,10 +60,38 @@ export default function Home() {
   // (Contact's link list makes room for Projects' case list by shifting
   // over to column 3; see the CSS for .contact-links / .contact-cta).
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactRevealKey, setContactRevealKey] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const homeRef = useRef<HTMLDivElement>(null);
+
+  // Case hover preview: a small still that tracks the cursor, top-left
+  // corner pinned to the pointer (see .case-preview). Position/src are only
+  // ever set on show/move and deliberately left in place on hide, same
+  // reasoning as the footnote preview — resetting them would snap the
+  // still-visible, mid-transition-out image back to (0,0)/blank instead of
+  // letting it shrink in place. Cases without a cover yet still show the
+  // (empty) frame, just with no image inside.
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [previewPos, setPreviewPos] = useState<{ top: number; left: number } | null>(null);
+  const [previewShown, setPreviewShown] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const showPreview = (cover: string | undefined, x: number, y: number) => {
+    setPreviewPos({ top: y, left: x });
+    setPreviewSrc(cover ?? null);
+    setPreviewShown(true);
+  };
+  const movePreview = (x: number, y: number) => setPreviewPos({ top: y, left: x });
+  const hidePreview = () => setPreviewShown(false);
+
+  // Closing the cases list should always dismiss any lingering preview,
+  // even if the pointer never left the link (e.g. closed via the toggle).
+  useEffect(() => {
+    if (!projectsOpen) setPreviewShown(false);
+  }, [projectsOpen]);
 
   // .home should never actually scroll — it's the fixed, full-viewport
   // shell. The off-screen lists and the nav's always-present × icon
@@ -72,7 +105,7 @@ export default function Home() {
       el.scrollLeft = 0;
       el.scrollTop = 0;
     }
-  }, [projectsOpen, contactOpen]);
+  }, [projectsOpen, archiveOpen, contactOpen]);
 
   // Trigger the reveal animation once, on the first client paint. rAF gives a
   // smooth start when visible; the timeout guarantees it fires even in a
@@ -104,29 +137,53 @@ export default function Home() {
     setContactOpen(true);
   };
 
-  const toggleProjects = () => {
+  // Arriving from another page's nav (e.g. /?contact=1 or /?projects=1 from
+  // the Archive nav) opens the matching panel on load, then strips the flag
+  // so a later refresh starts clean.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("contact") === "1") openContact();
+    else if (params.get("projects") === "1") setProjectsOpen(true);
+    else return;
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.hash
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Projects (left), Archive (right) and Contact are mutually exclusive — at
+  // most one open at a time. Opening one while another is open slides that one
+  // out first, then slides the requested one in after the swap delay.
+  type Panel = "projects" | "archive" | "contact";
+  const openPanel = (name: Panel) => {
+    if (name === "projects") setProjectsOpen(true);
+    else if (name === "archive") setArchiveOpen(true);
+    else openContact();
+  };
+  const togglePanel = (name: Panel, isOpen: boolean) => {
     if (swapTimer.current) clearTimeout(swapTimer.current);
-    if (projectsOpen) {
+    if (isOpen) {
+      if (name === "projects") setProjectsOpen(false);
+      else if (name === "archive") setArchiveOpen(false);
+      else setContactOpen(false);
+      return;
+    }
+    if (projectsOpen || archiveOpen || contactOpen) {
       setProjectsOpen(false);
-    } else if (contactOpen) {
+      setArchiveOpen(false);
       setContactOpen(false);
-      swapTimer.current = setTimeout(() => setProjectsOpen(true), PANEL_SWAP_DELAY);
+      swapTimer.current = setTimeout(() => openPanel(name), PANEL_SWAP_DELAY);
     } else {
-      setProjectsOpen(true);
+      openPanel(name);
     }
   };
 
-  const toggleContact = () => {
-    if (swapTimer.current) clearTimeout(swapTimer.current);
-    if (contactOpen) {
-      setContactOpen(false);
-    } else if (projectsOpen) {
-      setProjectsOpen(false);
-      swapTimer.current = setTimeout(openContact, PANEL_SWAP_DELAY);
-    } else {
-      openContact();
-    }
-  };
+  const toggleProjects = () => togglePanel("projects", projectsOpen);
+  const toggleArchive = () => togglePanel("archive", archiveOpen);
+  const toggleContact = () => togglePanel("contact", contactOpen);
 
   // Clock/colophon slide from their resting spot (row 3, bottom-aligned —
   // the grid's bottom edge) up to row 2 when Contact opens. The distance
@@ -171,13 +228,22 @@ export default function Home() {
   return (
     <div
       ref={homeRef}
-      className={`home${projectsOpen ? " is-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}`}
+      className={`home${projectsOpen ? " is-open" : ""}${archiveOpen ? " is-archive-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}`}
     >
       <div className="home__inner">
         <h1 className="intro">
           <Reveal delay={0.05}>Roman Myronov</Reveal>
           <Reveal delay={0.12}>Designer and Art Director</Reveal>
         </h1>
+
+        {/* Archive's lead line — the same copy the /archive page shows,
+            revealed with the shared mask animation when Archive opens. Mounted
+            only while open so the reveal replays on every open. */}
+        <p className="archive-lead-home" aria-hidden={!archiveOpen}>
+          {archiveOpen && (
+            <Reveal delay={0.05}>A collection of old but precious works</Reveal>
+          )}
+        </p>
 
         <ul className="cases" aria-hidden={!projectsOpen}>
           {caseOrder.map((c, i) => (
@@ -189,6 +255,9 @@ export default function Home() {
                 href={`/case/${c.slug}`}
                 className="cases__item"
                 tabIndex={projectsOpen ? 0 : -1}
+                onMouseEnter={(e) => showPreview(c.cover, e.clientX, e.clientY)}
+                onMouseMove={(e) => movePreview(e.clientX, e.clientY)}
+                onMouseLeave={hidePreview}
               >
                 <Roll>{c.name}</Roll>
               </Link>
@@ -224,6 +293,13 @@ export default function Home() {
           ))}
         </ul>
 
+        {/* Archive — slides in from the right (mirror of the Projects list on
+            the left). Kept mounted so its internal scroll/distortion is ready;
+            hidden and non-interactive until opened. */}
+        <div className="archive-panel" aria-hidden={!archiveOpen}>
+          <ArchiveList items={archiveItems} open={archiveOpen} />
+        </div>
+
         <nav className="nav" aria-label="Primary">
           <ul>
             <li>
@@ -246,15 +322,40 @@ export default function Home() {
                 </span>
               </button>
             </li>
-            {navLinks.map((link, i) => (
-              <li key={link.href}>
-                <Link href={link.href} className="nav__link">
-                  <Reveal delay={0.16 + i * 0.06}>
-                    <Roll>{link.label}</Roll>
+            <li>
+              <Link href="/about" className="nav__link">
+                <Reveal delay={0.16}>
+                  <Roll>About</Roll>
+                </Reveal>
+              </Link>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`nav__toggle${archiveOpen ? " is-open" : ""}`}
+                aria-expanded={archiveOpen}
+                onClick={toggleArchive}
+              >
+                <span className="nav__toggle-inner">
+                  <Reveal delay={0.22}>
+                    <Roll>Archive</Roll>
                   </Reveal>
-                </Link>
-              </li>
-            ))}
+                  <span
+                    className={`nav__x${archiveOpen ? " is-open" : ""}`}
+                    aria-hidden
+                  >
+                    <CloseIcon />
+                  </span>
+                </span>
+              </button>
+            </li>
+            <li>
+              <Link href="/dump" className="nav__link">
+                <Reveal delay={0.28}>
+                  <Roll>Dump</Roll>
+                </Reveal>
+              </Link>
+            </li>
             <li>
               <button
                 type="button"
@@ -263,7 +364,7 @@ export default function Home() {
                 onClick={toggleContact}
               >
                 <span className="nav__toggle-inner">
-                  <Reveal delay={0.16 + navLinks.length * 0.06}>
+                  <Reveal delay={0.34}>
                     <Roll>Contact</Roll>
                   </Reveal>
                   <span className={`nav__x${contactOpen ? " is-open" : ""}`} aria-hidden>
@@ -348,6 +449,25 @@ export default function Home() {
       {/* ---- Centered figure ---- */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="figure" src="/images/figure.png" alt="" />
+
+      {/* Rendered via a portal into <body> so it escapes .home's
+          overflow:hidden regardless of stacking context, same reasoning as
+          FootnoteImage. Kept unconditionally mounted (once client-side) so
+          the very first hover has a prior frame to scale in from. */}
+      {mounted &&
+        createPortal(
+          <span
+            className={`case-preview${previewShown ? " is-shown" : ""}`}
+            style={previewPos ? { top: previewPos.top, left: previewPos.left } : undefined}
+            aria-hidden
+          >
+            {previewSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewSrc} alt="" />
+            )}
+          </span>,
+          document.body
+        )}
     </div>
   );
 }

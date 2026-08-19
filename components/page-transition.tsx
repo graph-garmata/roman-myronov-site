@@ -28,13 +28,17 @@ export default function PageTransitionProvider({
   const router = useRouter();
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("idle");
+  // The curtain goes white when the destination is Home's Contact takeover
+  // (which is a light-mode section), so the wipe matches what's behind it.
+  const [light, setLight] = useState(false);
   const pendingHref = useRef<string | null>(null);
   const prevPathname = useRef(pathname);
 
   const navigate = useCallback(
-    (href: string) => {
+    (href: string, isLight = false) => {
       if (phase !== "idle") return;
       pendingHref.current = href;
+      setLight(isLight);
       setPhase("covering");
     },
     [phase]
@@ -108,7 +112,8 @@ export default function PageTransitionProvider({
       if (url.pathname === window.location.pathname) return; // same page
       e.preventDefault();
       e.stopPropagation();
-      navigate(href);
+      // Home's Contact takeover is light — wipe white for it.
+      navigate(href, url.searchParams.get("contact") === "1");
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
@@ -118,7 +123,7 @@ export default function PageTransitionProvider({
     <NavigateContext.Provider value={navigate}>
       {children}
       <div
-        className={`curtain${phase !== "idle" ? ` curtain--${phase}` : ""}`}
+        className={`curtain${phase !== "idle" ? ` curtain--${phase}` : ""}${light ? " curtain--light" : ""}`}
         onTransitionEnd={handleTransitionEnd}
         aria-hidden
       />

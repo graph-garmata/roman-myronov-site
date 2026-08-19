@@ -1,14 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Lenis from "lenis";
+import Roll from "@/components/roll";
+
+// An archive entry: its display name and, optionally, the still shown in the
+// cursor-tracking hover preview — mirrors `cover` on caseOrder (see
+// lib/cases.ts). Items without a cover yet still reveal the (empty) frame on
+// hover, exactly like the cases menu.
+export type ArchiveItem = { name: string; cover?: string };
 
 // However few items exist, repeat them enough that one lap is comfortably
 // longer than the viewport — a list of two or three items still reads as a
 // real scroll, not an obvious tiny loop.
 const MIN_LAP_ITEMS = 12;
 
-function buildLap(items: string[]) {
+function buildLap(items: ArchiveItem[]) {
   if (items.length === 0) return [];
   const repeats = Math.max(1, Math.ceil(MIN_LAP_ITEMS / items.length));
   return Array.from({ length: repeats }, () => items).flat();
@@ -48,6 +56,12 @@ const ONSET_ARM_SPEED = 0.5; // re-arm the kick once the list is this slow again
 const ONSET_FIRE_SPEED = 3; // speed that counts as a new gesture starting
 const REST_EPS = 0.0015; // below this (and near-still), park and clear
 
+// Entrance: when the list opens, each word slides in from the right, delayed
+// by how far down the viewport it sits, so they arrive top-to-bottom one by
+// one. This is the total spread (seconds) from the top word to the bottom —
+// large enough that each word visibly lands before the next starts.
+const ENTRANCE_STAGGER = 0.7;
+
 /**
  * ArchiveList — an endlessly scrollable list. One lap (the items, repeated
  * until comfortably long) is rendered three times back to back; a Lenis
@@ -55,8 +69,18 @@ const REST_EPS = 0.0015; // below this (and near-still), park and clear
  * scroll. Each frame the scroll wraps by one lap when it reaches the
  * leading/trailing copy (so it loops forever), and the whole column is
  * squashed/stretched around the cursor per the model documented above.
+ *
+ * `open` drives the entrance: when it flips true the words stagger in from the
+ * right (see ENTRANCE_STAGGER and the .archive-list__item CSS). Defaults true
+ * for the standalone /archive page, which is always visible.
  */
-export default function ArchiveList({ items }: { items: string[] }) {
+export default function ArchiveList({
+  items,
+  open = true,
+}: {
+  items: ArchiveItem[];
+  open?: boolean;
+}) {
   const lap = buildLap(items);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const stretchRef = useRef<HTMLDivElement>(null);
@@ -66,6 +90,31 @@ export default function ArchiveList({ items }: { items: string[] }) {
   // Cursor Y in viewport pixels — the pivot for the scale. Defaults to the
   // list's vertical centre until the pointer first moves over it.
   const cursorY = useRef(0);
+
+  // Hover preview: a small still whose top-left corner is pinned to the
+  // pointer, scale-revealed on hover — the exact language the cases menu uses
+  // (see components/home.tsx). Position/src are only set on show/move and left
+  // in place on hide, so the shrinking-out image doesn't snap back to (0,0)/
+  // blank mid-transition. Items without a cover show the empty frame.
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [previewPos, setPreviewPos] = useState<{ top: number; left: number } | null>(null);
+  const [previewShown, setPreviewShown] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const showPreview = (cover: string | undefined, x: number, y: number) => {
+    setPreviewPos({ top: y, left: x });
+    setPreviewSrc(cover ?? null);
+    setPreviewShown(true);
+  };
+  const movePreview = (x: number, y: number) => setPreviewPos({ top: y, left: x });
+  const hidePreview = () => setPreviewShown(false);
+
+  // Closing the panel dismisses any lingering preview even if the pointer
+  // never left the word (e.g. closed via the nav toggle).
+  useEffect(() => {
+    if (!open) setPreviewShown(false);
+  }, [open]);
 
   const measure = useCallback(() => {
     const scroller = scrollerRef.current;
@@ -92,6 +141,36 @@ export default function ArchiveList({ items }: { items: string[] }) {
     }
     return () => window.removeEventListener("resize", measure);
   }, [measure]);
+
+  // Entrance, driven inline so it can't be lost to CSS cascade order: each
+  // word is parked off to the right (translateX(110%)) and, when the list
+  // opens, slid to 0 with a transition-delay proportional to how far down the
+  // viewport it sits — so the words sweep in top→bottom, one by one. On close
+  // they all slide back out together. useLayoutEffect so the transforms are
+  // set before paint.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const els = Array.from(
+      scroller.querySelectorAll<HTMLElement>(".archive-list__item")
+    );
+    if (!open) {
+      els.forEach((el) => {
+        el.style.transitionDelay = "0s";
+        el.style.transform = "translateX(110%)";
+      });
+      return;
+    }
+    const rect = scroller.getBoundingClientRect();
+    const vh = rect.height || 1;
+    els.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const p = ((r.top + r.bottom) / 2 - rect.top) / vh; // 0 top … 1 bottom
+      const clamped = p < 0 ? 0 : p > 1 ? 1 : p;
+      el.style.transitionDelay = `${(clamped * ENTRANCE_STAGGER).toFixed(3)}s`;
+      el.style.transform = "translateX(0)";
+    });
+  }, [open]);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -217,7 +296,11 @@ export default function ArchiveList({ items }: { items: string[] }) {
   if (lap.length === 0) return null;
 
   return (
-    <div className="archive-list" ref={scrollerRef} data-lenis-prevent>
+    <div
+      className={`archive-list${open ? " archive-list--open" : ""}`}
+      ref={scrollerRef}
+      data-lenis-prevent
+    >
       <div className="archive-list__stretch" ref={stretchRef}>
         {[0, 1, 2].map((copy) => (
           <div
@@ -225,14 +308,39 @@ export default function ArchiveList({ items }: { items: string[] }) {
             ref={copy === 1 ? lapRef : undefined}
             key={copy}
           >
-            {lap.map((name, i) => (
-              <p className="archive-list__item" key={`${name}-${i}`}>
-                {name}
+            {lap.map((item, i) => (
+              <p
+                className="archive-list__item"
+                key={`${item.name}-${i}`}
+                onMouseEnter={(e) => showPreview(item.cover, e.clientX, e.clientY)}
+                onMouseMove={(e) => movePreview(e.clientX, e.clientY)}
+                onMouseLeave={hidePreview}
+              >
+                <Roll>{item.name}</Roll>
               </p>
             ))}
           </div>
         ))}
       </div>
+
+      {/* Rendered via a portal into <body> so it escapes the panel/list's
+          overflow:hidden regardless of stacking context — same reasoning as
+          the cases preview in home.tsx. Kept mounted (once client-side) so the
+          first hover has a prior frame to scale in from. */}
+      {mounted &&
+        createPortal(
+          <span
+            className={`case-preview${previewShown ? " is-shown" : ""}`}
+            style={previewPos ? { top: previewPos.top, left: previewPos.left } : undefined}
+            aria-hidden
+          >
+            {previewSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewSrc} alt="" />
+            )}
+          </span>,
+          document.body
+        )}
     </div>
   );
 }
