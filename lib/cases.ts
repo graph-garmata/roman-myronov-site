@@ -1097,10 +1097,287 @@ const prostir: CaseStudy = {
   ],
 };
 
+const specialty: CaseStudy = {
+  slug: "specialty",
+  name: "Specialty",
+  scope: "Strategy, Verbal Identity, Visual Identity, Packaging",
+  talents: [
+    { name: "Roman Myronov", role: "Art Director, Designer" },
+    { name: "Ann Datsiuk", role: "Designer, Illustrator" },
+    { name: "Olha Shevchuk", role: "Creative Copywriter" },
+    { name: "Ivan Hrankin", role: "Brand Strategist" },
+    { name: "Serge Sprenne, Anastasiia Kushnarenko", role: "Motion Design" },
+  ],
+  problem:
+    "A new coffee shop chain opening in Milan — a city whose industrial, business-oriented, fast-paced character leaves people needing somewhere to take a break.",
+  blocks: [
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-01.mp4",
+          webm: "/images/specialty/film-01.webm",
+          poster: "/images/specialty/film-01-poster.jpg",
+          alt: "Specialty showreel",
+          sound: true,
+        },
+      },
+    },
+    {
+      type: "copy",
+      label: "Brief",
+      text: "The client's brief was to develop a brand identity for a new coffee shop chain, with its first location in Milan. To understand the city's context, we conducted interviews with local residents to learn more about its character. The key takeaway was Milan's industrial nature, business-oriented mindset, and fast-paced lifestyle. This insight led us to a core realization – people in Milan need a place to take a break. Combined with the founders' initial vision of creating a visually aesthetic space with a high-quality customer experience, we understood that Specialty could take on the role of a retreat, offering a safe room for anyone who needs it.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-02.mp4",
+          webm: "/images/specialty/film-02.webm",
+          poster: "/images/specialty/film-02-poster.jpg",
+          alt: "Safe space",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1921 / 1201,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/address-card.webp",
+        alt: "Take a breath card with the Milan address",
+      },
+    },
+    {
+      type: "copy",
+      label: "Idea",
+      text: "Based on this positioning idea, we developed the concept of an “anti-stress identity.” When trying to escape intrusive thoughts, the human brain often engages in motor and sensory activities. People tend to occupy their hands—drawing, twirling a pen, molding clay, knitting, etc. Rhythmic movements help to soothe, reduce stress, and promote relaxation. They also divert the brain from anxious thoughts, fostering focus on the present moment. One of the most common habits in this context is doodling. That's why we came up with a creative mechanism: transforming stress into brand identity elements through customer doodles left on coasters and napkins. Visitors themselves become the designers of our brand.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-03.mp4",
+          webm: "/images/specialty/film-03.webm",
+          poster: "/images/specialty/film-03-poster.jpg",
+          alt: "The mechanic",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2000 / 2000,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/doodling.webp",
+        alt: "A customer doodling on a coaster at the table",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-04.mp4",
+          webm: "/images/specialty/film-04.webm",
+          poster: "/images/specialty/film-04-poster.jpg",
+          alt: "Coaster cycle",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2000 / 2000,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/table.webp",
+        alt: "Coasters and cards on a table with coffee",
+      },
+    },
+    {
+      type: "copy",
+      label: "Characters",
+      text: "The main character of the brand is the Italian wolf, subtly referencing the brand's roots. However, the identity also incorporates a variety of other images that reflect the individuality of Specialty's visitors.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-05.mp4",
+          webm: "/images/specialty/film-05.webm",
+          poster: "/images/specialty/film-05-poster.jpg",
+          alt: "The Italian wolf and his friends",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/wolf.webp",
+        alt: "The wolf doodle with an awooo lockup",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/characters.webp",
+        alt: "Additional doodled characters in the identity",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-06.mp4",
+          webm: "/images/specialty/film-06.webm",
+          poster: "/images/specialty/film-06-poster.jpg",
+          alt: "Take a breath",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1080,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-07.mp4",
+          webm: "/images/specialty/film-07.webm",
+          poster: "/images/specialty/film-07-poster.jpg",
+          alt: "Coffee shop cup",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2000 / 2000,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/menu-packaging.webp",
+        alt: "Menu packaging for hot and cold drinks",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/menu-cards.webp",
+        alt: "Menu cards carrying the doodled characters",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-08.mp4",
+          webm: "/images/specialty/film-08.webm",
+          poster: "/images/specialty/film-08-poster.jpg",
+          alt: "Menu animation",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/gelato.webp",
+        alt: "Gelato tubs and a branded cup",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/cups.webp",
+        alt: "The cup sizes, each with its own character",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/pour.webp",
+        alt: "Pouring coffee, with a branded sleeve",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/bottles.webp",
+        alt: "Cold brew bottles in the range",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2000 / 2000,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/bottle.webp",
+        alt: "A cold brew bottle on red",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/specialty/film-09.mp4",
+          webm: "/images/specialty/film-09.webm",
+          poster: "/images/specialty/film-09-poster.jpg",
+          alt: "Social stories",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/social.webp",
+        alt: "Social posts in the brand's voice",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/specialty/guidelines.webp",
+        alt: "Spreads from the brand guidelines",
+      },
+    },
+  ],
+};
+
 const studies: Record<string, CaseStudy> = {
   luminar,
   estyl,
   prostir,
+  specialty,
 };
 
 export function getCase(slug: string): CaseStudy | undefined {
@@ -1116,7 +1393,7 @@ export type CaseMeta = { slug: string; name: string; done: boolean; cover?: stri
 export const caseOrder: CaseMeta[] = [
   { slug: "luminar", name: "Luminar", done: true, cover: "/images/luminar/block-1.webp" },
   { slug: "denormalized", name: "Denormalized", done: false },
-  { slug: "specialty", name: "Specialty", done: false },
+  { slug: "specialty", name: "Specialty", done: true, cover: "/images/specialty/wolf.webp" },
   { slug: "prostir", name: "Prostir", done: true, cover: "/images/prostir/signage-exterior.webp" },
   { slug: "estyl", name: "Estyl", done: true, cover: "/images/estyl/socks.webp" },
   { slug: "volta", name: "Volta", done: false },
