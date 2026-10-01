@@ -1373,11 +1373,381 @@ const specialty: CaseStudy = {
   ],
 };
 
+const genie: CaseStudy = {
+  slug: "genie",
+  name: "Genie",
+  scope: "Brand Identity, Product Design, Motion",
+  talents: [
+    { name: "Sam Tipikin", role: "Design Director, Product" },
+    { name: "Roman Myronov", role: "Creative Director" },
+    { name: "Roman Danyliuk", role: "Motion Designer" },
+    { name: "Yuliia Lunina", role: "UI/UX Designer" },
+  ],
+  problem:
+    "Genie had a product that worked and a brand that was still missing a piece — an app that made sense of scattered health data, in an experience that was purely functional.",
+  blocks: [
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/genie/wordmark.webp",
+        alt: "The genie wordmark over a brand gradient",
+      },
+    },
+    {
+      type: "copy",
+      label: "Problem",
+      text: "Genie had a product that worked and a brand that was still missing a piece. The app pulled scattered health data into one place and made sense of it, but the experience was purely functional — healthcare blue and green, a generic AI sphere, screens that delivered information without ever suggesting who was delivering it. The identity had no character yet, and the parts weren't connected: logo, symbol and motion existed separately rather than as a system. In a category people already avoid, that piece matters more than it would anywhere else. How Genie makes someone feel decides whether they open it at all — and that was the layer still to come. Here is how it used to look.",
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/genie/before.webp",
+        alt: "The previous Genie brand and app screens",
+      },
+    },
+    {
+      type: "copy",
+      label: "Logo",
+      text: "Most marks in health tech look interchangeable, and the old Genie wordmark sat in the middle of that pack. Healthcare also limits how far a brand can move. People trust a health product with their bodies, so the mark had to stay trustworthy. We kept that weight and looked for one detail that would make it recognisable. The name gave us that detail. A genie is a jinn, and a jinn trails off into smoke. We drew that smoke into the descender of the g, so a single letter carries the story of the name. That order fits a brand whose magic works in the background.",
+    },
+    {
+      type: "copy",
+      label: "Sub-brands",
+      text: "Genie won't stay one product. Rather than hand over a single lockup, we built a derivation framework: a fixed lockup structure and rules for how colour carries across variants, so any sub-brand reads as part of the same family without being redrawn. The team can add products and stay aligned with the master brand without coming back to us.",
+    },
+    {
+      type: "grid",
+      cells: [
+        {
+          kind: "video",
+          video: {
+            mp4: "/images/genie/wordmark-build.mp4",
+            webm: "/images/genie/wordmark-build.webm",
+            poster: "/images/genie/wordmark-build-poster.jpg",
+            alt: "The wordmark building up",
+          },
+          ratio: 800 / 1000,
+        },
+        {
+          kind: "video",
+          video: {
+            mp4: "/images/genie/g-anatomy.mp4",
+            webm: "/images/genie/g-anatomy.webm",
+            poster: "/images/genie/g-anatomy-poster.jpg",
+            alt: "The g descender set against anatomy",
+          },
+          ratio: 1280 / 1600,
+        },
+      ],
+    },
+    {
+      type: "grid",
+      cells: [
+        {
+          ratio: 1280 / 1600,
+          kind: "image",
+          src: "/images/genie/logo-construction.webp",
+          alt: "Construction of the g letterform",
+        },
+        {
+          ratio: 1280 / 1600,
+          kind: "image",
+          src: "/images/genie/app-icon.webp",
+          alt: "The app icon on a phone home screen",
+        },
+      ],
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-01.mp4",
+          webm: "/images/genie/film-01.webm",
+          poster: "/images/genie/film-01-poster.jpg",
+          alt: "Sub-brand lockup animation",
+        },
+      },
+    },
+    {
+      type: "copy",
+      label: "Colour & Type",
+      text: "Genie came to us with a palette, a set of gradients and a serif typeface already in use across their app. They wanted all three kept. Our research raised the problem with that: nearly every healthcare brand runs on blue and green, and Genie's palette sat right among them. So the brief turned into a question of approach. We couldn't swap the assets, so we had to change how the brand used them. The work that follows shows how we took the client's own colours, gradients and type and built something that stands apart from the category.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-02.mp4",
+          webm: "/images/genie/film-02.webm",
+          poster: "/images/genie/film-02-poster.jpg",
+          alt: "The colour system",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-03.mp4",
+          webm: "/images/genie/film-03.webm",
+          poster: "/images/genie/film-03-poster.jpg",
+          alt: "The typeface",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-04.mp4",
+          webm: "/images/genie/film-04.webm",
+          poster: "/images/genie/film-04-poster.jpg",
+          alt: "Typography and cards",
+        },
+      },
+    },
+    {
+      type: "copy",
+      label: "Strategy",
+      text: "Genie gives each user personalised insights and guidance about their own health. Most health apps present the same information to everyone. We repositioned Genie as a spotlight: it shows what matters for you right now and leaves the rest in the dark until you need it.",
+    },
+    {
+      type: "copy",
+      label: "The Lamp",
+      text: "A genie lives in a lamp, and a lamp throws light on one spot. That became the brand's visual metaphor. We based the lamp silhouettes on biological and organic forms, so they sit naturally next to anatomy, body imagery and the client's gradients.",
+    },
+    {
+      type: "copy",
+      label: "Shape Generator",
+      text: "The brand has to keep working after we hand it over. Genie's marketing and product teams will produce new material for years, so we built them a tool that generates brand visuals. It creates lamp shapes and gradient compositions within the system's rules, and the team can make new assets without redrawing anything or coming back to us.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-05.mp4",
+          webm: "/images/genie/film-05.webm",
+          poster: "/images/genie/film-05-poster.jpg",
+          alt: "The lamp silhouettes explained",
+        },
+      },
+    },
+    {
+      type: "grid",
+      cells: [
+        {
+          ratio: 1280 / 1600,
+          kind: "image",
+          src: "/images/genie/subbrand-cards.webp",
+          alt: "Sub-brand cards across the gradient range",
+        },
+        {
+          kind: "video",
+          video: {
+            mp4: "/images/genie/lamp-shape.mp4",
+            webm: "/images/genie/lamp-shape.webm",
+            poster: "/images/genie/lamp-shape-poster.jpg",
+            alt: "A lamp shape in motion",
+          },
+          ratio: 1280 / 1600,
+        },
+      ],
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1030,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-06.mp4",
+          webm: "/images/genie/film-06.webm",
+          poster: "/images/genie/film-06-poster.jpg",
+          alt: "The shape generator in use",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-07.mp4",
+          webm: "/images/genie/film-07.webm",
+          poster: "/images/genie/film-07-poster.jpg",
+          alt: "Cards and phone",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-08.mp4",
+          webm: "/images/genie/film-08.webm",
+          poster: "/images/genie/film-08-poster.jpg",
+          alt: "Onboarding flow",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1920,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-09.mp4",
+          webm: "/images/genie/film-09.webm",
+          poster: "/images/genie/film-09-poster.jpg",
+          alt: "Lock screen",
+        },
+      },
+    },
+    {
+      type: "copy",
+      label: "Beyond the Lamp",
+      text: "The lamp introduced the idea. The gradient approach behind it goes much further. The same technique can take the form of whatever the context calls for, from an organ to a metric to a person in motion, and still read as Genie. The brand gets one visual language that adapts to the subject instead of a fixed set of symbols.",
+    },
+    {
+      type: "copy",
+      label: "The App",
+      text: "The app is the brand's main home. Here the gradients do real work: each one shapes itself around the data it shows, so the interface carries the same spotlight idea as the rest of the brand.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1536,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-10.mp4",
+          webm: "/images/genie/film-10.webm",
+          poster: "/images/genie/film-10-poster.jpg",
+          alt: "The gradient language across subjects",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-11.mp4",
+          webm: "/images/genie/film-11.webm",
+          poster: "/images/genie/film-11-poster.jpg",
+          alt: "App screens",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/genie/watch.webp",
+        alt: "The brand on a smartwatch",
+      },
+    },
+    {
+      type: "copy",
+      label: "Character",
+      text: "Genie's assistant started as an abstract sphere, the same glowing blob most AI products use. It had no link to health or to the name. We rebuilt it around fire. Fire already carries the meanings a health guide needs. People talk about fire in someone's eyes when they mean energy, and a fire in the soul when they mean strength. Fire is the warmth of a living body. Healers used it as the first antiseptic, and stage magicians still use it to hold an audience. It also closes the loop with the name: in folklore, jinns are made of smokeless fire. The flame gives the character a face and a range of moods. It nudges, reassures, rests and thinks, and each state changes its colour and shape using the same gradients as the rest of the brand. In the app, users interact with Genie directly, and it responds with the brand's motion and colour. We wanted that experience to feel pleasant without costing readability, so type, contrast and hierarchy follow the standards a healthcare product needs. The character went through the same check. The gradient flame loses its detail at small sizes, so we drew a simplified mini Genie: a flat shape with the same face that stays readable when small and holds strong contrast on any surface.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-12.mp4",
+          webm: "/images/genie/film-12.webm",
+          poster: "/images/genie/film-12-poster.jpg",
+          alt: "The character's states",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1536,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-13.mp4",
+          webm: "/images/genie/film-13.webm",
+          poster: "/images/genie/film-13-poster.jpg",
+          alt: "The character in the product",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/genie/chat.webp",
+        alt: "Chat with the assistant",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-14.mp4",
+          webm: "/images/genie/film-14.webm",
+          poster: "/images/genie/film-14-poster.jpg",
+          alt: "Chat flow",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/genie/film-15.mp4",
+          webm: "/images/genie/film-15.webm",
+          poster: "/images/genie/film-15-poster.jpg",
+          alt: "Social media",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1600,
+      cell: {
+        kind: "image",
+        src: "/images/genie/keynote.webp",
+        alt: "The brand on stage",
+      },
+    },
+  ],
+};
+
 const studies: Record<string, CaseStudy> = {
   luminar,
   estyl,
   prostir,
   specialty,
+  genie,
 };
 
 export function getCase(slug: string): CaseStudy | undefined {
@@ -1399,7 +1769,7 @@ export const caseOrder: CaseMeta[] = [
   { slug: "volta", name: "Volta", done: false },
   { slug: "grail", name: "Grail", done: false },
   { slug: "townie", name: "Townie", done: false },
-  { slug: "genie", name: "Genie", done: false },
+  { slug: "genie", name: "Genie", done: true, cover: "/images/genie/wordmark.webp" },
 ];
 
 export function getCaseMeta(slug: string): CaseMeta {
