@@ -10,10 +10,35 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-type Phase = "idle" | "covering" | "revealing";
+// "custom": a page's own cover animation is playing (see usePageCover).
+// "covered": it finished — the curtain snaps in fully closed, unseen behind
+// the already-black screen, and takes over from there.
+type Phase = "idle" | "covering" | "custom" | "covered" | "revealing";
+
+/** A page's own cover: start it and return a promise that resolves once the
+ *  screen is fully black, or return null to fall back to the curtain. */
+type Cover = (href: string) => Promise<void> | null;
 
 const NavigateContext = createContext<(href: string) => void>(() => {});
 export const usePageTransition = () => useContext(NavigateContext);
+
+const CoverContext = createContext<React.RefObject<Cover | null> | null>(null);
+
+/** Lets the current page replace the curtain's cover for link clicks made
+ *  on it (Home's eye blackout). The reveal on the next page is unchanged. */
+export function usePageCover(cover: Cover) {
+  const slot = useContext(CoverContext);
+  const latest = useRef(cover);
+  latest.current = cover;
+  useEffect(() => {
+    if (!slot) return;
+    const fn: Cover = (href) => latest.current(href);
+    slot.current = fn;
+    return () => {
+      if (slot.current === fn) slot.current = null;
+    };
+  }, [slot]);
+}
 
 /**
  * Page transitions: on an internal navigation, a black rectangle scales down
@@ -33,6 +58,9 @@ export default function PageTransitionProvider({
   const [light, setLight] = useState(false);
   const pendingHref = useRef<string | null>(null);
   const prevPathname = useRef(pathname);
+  const coverRef = useRef<Cover | null>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
   const navigate = useCallback(
     (href: string, isLight = false) => {
@@ -66,6 +94,12 @@ export default function PageTransitionProvider({
       const t = setTimeout(commit, 650);
       return () => clearTimeout(t);
     }
+    if (phase === "covered") {
+      commit();
+      // If the route never commits, don't leave the screen black.
+      const t = setTimeout(() => setPhase("revealing"), 3000);
+      return () => clearTimeout(t);
+    }
     if (phase === "revealing") {
       const t = setTimeout(() => setPhase("idle"), 650);
       return () => clearTimeout(t);
@@ -77,7 +111,7 @@ export default function PageTransitionProvider({
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;
       pendingHref.current = null;
-      setPhase((p) => (p === "covering" ? "revealing" : p));
+      setPhase((p) => (p === "covering" || p === "covered" ? "revealing" : p));
     }
   }, [pathname]);
 
@@ -112,6 +146,15 @@ export default function PageTransitionProvider({
       if (url.pathname === window.location.pathname) return; // same page
       e.preventDefault();
       e.stopPropagation();
+      if (phaseRef.current !== "idle") return;
+      const custom = coverRef.current?.(href);
+      if (custom) {
+        pendingHref.current = href;
+        setLight(false);
+        setPhase("custom");
+        custom.then(() => setPhase("covered"));
+        return;
+      }
       // Home's Contact takeover is light — wipe white for it.
       navigate(href, url.searchParams.get("contact") === "1");
     };
@@ -121,9 +164,9 @@ export default function PageTransitionProvider({
 
   return (
     <NavigateContext.Provider value={navigate}>
-      {children}
+      <CoverContext.Provider value={coverRef}>{children}</CoverContext.Provider>
       <div
-        className={`curtain${phase !== "idle" ? ` curtain--${phase}` : ""}${light ? " curtain--light" : ""}`}
+        className={`curtain${phase !== "idle" && phase !== "custom" ? ` curtain--${phase}` : ""}${light ? " curtain--light" : ""}`}
         onTransitionEnd={handleTransitionEnd}
         aria-hidden
       />

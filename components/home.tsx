@@ -15,6 +15,8 @@ import Roll from "@/components/roll";
 import Reveal from "@/components/reveal";
 import { ArrowIcon } from "@/components/home-button";
 import ArchiveList from "@/components/archive-list";
+import Eye, { type EyeHandle } from "@/components/eye";
+import { usePageCover } from "@/components/page-transition";
 import { caseOrder } from "@/lib/cases";
 
 // Archive is no longer its own page — it opens as a right-side panel here.
@@ -99,6 +101,44 @@ export default function Home() {
   };
   const movePreview = (x: number, y: number) => setPreviewPos({ top: y, left: x });
   const hidePreview = () => setPreviewShown(false);
+
+  // Hovering any nav tab or case link opens the eye. Leaving closes it after
+  // a short grace period, so sliding between stacked items doesn't blink it
+  // shut.
+  // Mouse only — touch has no hover to anchor the open/close to.
+  const [eyeOpen, setEyeOpen] = useState(false);
+  const eyeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eyeHover = {
+    onPointerEnter: (e: React.PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      if (eyeTimer.current) clearTimeout(eyeTimer.current);
+      setEyeOpen(true);
+    },
+    onPointerLeave: (e: React.PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      if (eyeTimer.current) clearTimeout(eyeTimer.current);
+      eyeTimer.current = setTimeout(() => setEyeOpen(false), 120);
+    },
+  };
+  useEffect(
+    () => () => {
+      if (eyeTimer.current) clearTimeout(eyeTimer.current);
+    },
+    []
+  );
+
+  // Leaving Home by a link while the eye is open plays the eye's blackout in
+  // place of the curtain; the curtain then reveals the next page as usual.
+  const eyeRef = useRef<EyeHandle>(null);
+  const [leaving, setLeaving] = useState(false);
+  usePageCover(() => {
+    const done = eyeRef.current?.blackout() ?? null;
+    if (done) {
+      setLeaving(true);
+      setPreviewShown(false);
+    }
+    return done;
+  });
 
   // Closing the cases list should always dismiss any lingering preview,
   // even if the pointer never left the link (e.g. closed via the toggle).
@@ -241,7 +281,7 @@ export default function Home() {
   return (
     <div
       ref={homeRef}
-      className={`home${projectsOpen ? " is-open" : ""}${archiveOpen ? " is-archive-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}`}
+      className={`home${projectsOpen ? " is-open" : ""}${archiveOpen ? " is-archive-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}${leaving ? " is-leaving" : ""}`}
     >
       <div className="home__inner">
         <h1 className="intro">
@@ -272,6 +312,7 @@ export default function Home() {
                 href={`/case/${c.slug}`}
                 className="cases__item"
                 tabIndex={projectsOpen ? 0 : -1}
+                {...eyeHover}
                 onMouseEnter={(e) => showPreview(c.cover, e.clientX, e.clientY)}
                 onMouseMove={(e) => movePreview(e.clientX, e.clientY)}
                 onMouseLeave={hidePreview}
@@ -322,6 +363,7 @@ export default function Home() {
             <li>
               <button
                 type="button"
+                {...eyeHover}
                 className={`nav__toggle${projectsOpen ? " is-open" : ""}`}
                 aria-expanded={projectsOpen}
                 onClick={toggleProjects}
@@ -341,7 +383,7 @@ export default function Home() {
               </button>
             </li>
             <li>
-              <Link href="/about" className="nav__link" style={boxDelay(0.16)}>
+              <Link href="/about" {...eyeHover} className="nav__link" style={boxDelay(0.16)}>
                 <Reveal delay={0.16 + BOX_LEAD}>
                   <Roll>About</Roll>
                 </Reveal>
@@ -350,6 +392,7 @@ export default function Home() {
             <li>
               <button
                 type="button"
+                {...eyeHover}
                 className={`nav__toggle${archiveOpen ? " is-open" : ""}`}
                 aria-expanded={archiveOpen}
                 onClick={toggleArchive}
@@ -369,7 +412,7 @@ export default function Home() {
               </button>
             </li>
             <li>
-              <Link href="/dump" className="nav__link" style={boxDelay(0.28)}>
+              <Link href="/dump" {...eyeHover} className="nav__link" style={boxDelay(0.28)}>
                 <Reveal delay={0.28 + BOX_LEAD}>
                   <Roll>Dump</Roll>
                 </Reveal>
@@ -378,6 +421,7 @@ export default function Home() {
             <li>
               <button
                 type="button"
+                {...eyeHover}
                 className={`nav__toggle${contactOpen ? " is-open" : ""}`}
                 aria-expanded={contactOpen}
                 onClick={toggleContact}
@@ -471,6 +515,9 @@ export default function Home() {
           </a>
         </div>
       </div>
+
+      {/* ---- Eye: opens behind the figure while a nav tab or case is hovered ---- */}
+      <Eye ref={eyeRef} open={eyeOpen} />
 
       {/* ---- Centered figure ---- */}
       {/* eslint-disable-next-line @next/next/no-img-element */}

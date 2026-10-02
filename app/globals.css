@@ -52,6 +52,14 @@
   pointer-events: auto;
 }
 
+/* Snapped shut with no transition: a page's own cover (Home's eye blackout)
+   has already blacked out the screen, so the curtain just takes over. */
+.curtain--covered {
+  transform: scaleY(1);
+  transition: none;
+  pointer-events: auto;
+}
+
 .curtain--revealing {
   transform: scaleY(0);
   transform-origin: bottom;
@@ -613,6 +621,30 @@ a {
   pointer-events: none;
   user-select: none;
   transition: transform 0.6s var(--ease), opacity 0.5s var(--ease);
+}
+
+/* --- Eye (components/eye.tsx) — full-bleed backdrop behind the figure and
+   labels. Lid and iris are animated from JS; closed it's a zero-area slit.
+   Sized like the Figma frame: the 1728×936 eye is always at least as wide
+   as the screen AND 104% of its height (936 / 900), so the lids bleed past
+   the top and bottom edges instead of their tips just grazing them. */
+.eye {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, calc(104dvh * 1728 / 936));
+  aspect-ratio: 1728 / 936;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Leaving through the eye's blackout: once the black has covered the screen,
+   the labels and figure fade off it before the next page comes in. */
+.home.is-leaving .home__inner,
+.home.is-leaving .figure {
+  opacity: 0;
+  transition: opacity 0.4s var(--ease) 0.7s, transform 0.6s var(--ease);
 }
 
 /* Open: recenter the figure within the last four columns (cols 3–6 ≈ 2/3). */
