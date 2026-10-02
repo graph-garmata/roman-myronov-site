@@ -9,11 +9,23 @@ import {
   useState,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import WordTransition from "@/components/word-transition";
 
 // "custom": a page's own cover animation is playing (see usePageCover).
 // "covered": it finished — the curtain snaps in fully closed, unseen behind
 // the already-black screen, and takes over from there.
-type Phase = "idle" | "covering" | "custom" | "covered" | "revealing";
+// "word": arriving at a named page — once the screen is black (by either
+// cover) the page's name plays instead of the curtain's reveal.
+type Phase = "idle" | "covering" | "custom" | "covered" | "word" | "revealing";
+
+// Standalone pages that arrive through their name (components/word-transition)
+// rather than the curtain. `color` is the page's own background, which the
+// transition ends on so lifting it reveals the page seamlessly.
+type WordPage = { label: string; color: string };
+const WORD_PAGES: Record<string, WordPage> = {
+  "/about": { label: "About", color: "#ffffff" },
+  "/dump": { label: "Dump", color: "#000000" },
+};
 
 /** A page's own cover: start it and return a promise that resolves once the
  *  screen is fully black, or return null to fall back to the curtain. */
@@ -61,11 +73,13 @@ export default function PageTransitionProvider({
   const coverRef = useRef<Cover | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+  const [word, setWord] = useState<WordPage | null>(null);
 
   const navigate = useCallback(
     (href: string, isLight = false) => {
       if (phase !== "idle") return;
       pendingHref.current = href;
+      setWord(WORD_PAGES[new URL(href, window.location.href).pathname] ?? null);
       setLight(isLight);
       setPhase("covering");
     },
@@ -81,18 +95,38 @@ export default function PageTransitionProvider({
     }
   }, [router]);
 
+  // Screen is black: hand over to the page's name if it has one, else go.
+  const covered = useCallback(() => {
+    if (word) {
+      setPhase("word");
+      if (pendingHref.current) router.prefetch(pendingHref.current);
+    } else {
+      commit();
+    }
+  }, [word, commit, router]);
+
   // Cover finished → navigate; reveal finished → back to idle. transitionend is
   // the smooth trigger, but it's frozen in background tabs, so each phase also
   // has a timeout fallback below so the sequence can never get stuck.
   const handleTransitionEnd = () => {
-    if (phase === "covering") commit();
+    if (phase === "covering") covered();
     else if (phase === "revealing") setPhase("idle");
   };
 
   useEffect(() => {
     if (phase === "covering") {
-      const t = setTimeout(commit, 650);
+      const t = setTimeout(covered, 650);
       return () => clearTimeout(t);
+    }
+    if (phase === "word") {
+      // WordTransition commits when it ends; this only guards a stalled tab
+      // or a route that never commits.
+      const t1 = setTimeout(commit, 2000);
+      const t2 = setTimeout(() => setPhase("idle"), 5000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
     if (phase === "covered") {
       commit();
@@ -104,14 +138,18 @@ export default function PageTransitionProvider({
       const t = setTimeout(() => setPhase("idle"), 650);
       return () => clearTimeout(t);
     }
-  }, [phase, commit]);
+  }, [phase, commit, covered]);
 
-  // Once the new route has committed (pathname changed), lift the curtain.
+  // Once the new route has committed (pathname changed), lift the curtain —
+  // or, after a word transition, just drop it: it already ended in the new
+  // page's own colour.
   useEffect(() => {
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;
       pendingHref.current = null;
-      setPhase((p) => (p === "covering" || p === "covered" ? "revealing" : p));
+      setPhase((p) =>
+        p === "word" ? "idle" : p === "covering" || p === "covered" ? "revealing" : p
+      );
     }
   }, [pathname]);
 
@@ -149,10 +187,15 @@ export default function PageTransitionProvider({
       if (phaseRef.current !== "idle") return;
       const custom = coverRef.current?.(href);
       if (custom) {
+        const wordPage = WORD_PAGES[url.pathname] ?? null;
         pendingHref.current = href;
+        setWord(wordPage);
         setLight(false);
         setPhase("custom");
-        custom.then(() => setPhase("covered"));
+        custom.then(() => {
+          setPhase(wordPage ? "word" : "covered");
+          if (wordPage) router.prefetch(href);
+        });
         return;
       }
       // Home's Contact takeover is light — wipe white for it.
@@ -160,16 +203,22 @@ export default function PageTransitionProvider({
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [navigate]);
+  }, [navigate, router]);
 
   return (
     <NavigateContext.Provider value={navigate}>
       <CoverContext.Provider value={coverRef}>{children}</CoverContext.Provider>
       <div
-        className={`curtain${phase !== "idle" && phase !== "custom" ? ` curtain--${phase}` : ""}${light ? " curtain--light" : ""}`}
+        className={`curtain${phase !== "idle" && phase !== "custom" && phase !== "word" ? ` curtain--${phase}` : ""}${light ? " curtain--light" : ""}`}
         onTransitionEnd={handleTransitionEnd}
         aria-hidden
       />
+      {/* Mounted over the black the cover left; the curtain retracts unseen
+          beneath it. Commits the route once the page's colour fills the
+          screen, and unmounts when the new route lands. */}
+      {phase === "word" && word && (
+        <WordTransition label={word.label} color={word.color} onDone={commit} />
+      )}
     </NavigateContext.Provider>
   );
 }

@@ -69,9 +69,15 @@ const easeInOutCubic = (t: number) =>
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
 export type EyeHandle = {
-  /** Plays the blackout if the eye is open enough to see; resolves once the
-   *  screen is fully black. Returns null (and does nothing) otherwise. */
+  /** Plays the blackout if the eye is open enough to see (or is already
+   *  black, or mid-restore — then it turns back round); resolves once the
+   *  screen is fully black, and holds it there. Returns null (and does
+   *  nothing) if the eye is closed. */
   blackout: () => Promise<void> | null;
+  /** Plays a held (or still-running) blackout backwards — wedges reopen,
+   *  the disc shrinks back into the iris — and resolves once the eye is
+   *  back to normal. Returns null if there's no blackout to undo. */
+  restore: () => Promise<void> | null;
 };
 
 // The almond from Layer_1, with each lid's curve depth driven by `open`
@@ -104,9 +110,16 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
   const wedgeRefs = useRef<(SVGPathElement | null)[]>([]);
   const openRef = useRef(open);
   const kick = useRef<() => void>(() => {});
-  const blackoutRef = useRef<EyeHandle["blackout"]>(() => null);
+  const api = useRef<EyeHandle>({ blackout: () => null, restore: () => null });
 
-  useImperativeHandle(ref, () => ({ blackout: () => blackoutRef.current() }), []);
+  useImperativeHandle(
+    ref,
+    () => ({
+      blackout: () => api.current.blackout(),
+      restore: () => api.current.restore(),
+    }),
+    []
+  );
 
   useEffect(() => {
     openRef.current = open;
@@ -116,12 +129,65 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
   useEffect(() => {
     const target = { x: 0, y: 0 };
     const iris = { x: 0, y: 0 };
+    // Where the cursor would have the iris look — tracked even while the
+    // gaze is held (blackout), so it can pick the cursor back up after.
+    const pointer = { x: 0, y: 0 };
     let lid = 0;
     let blinkStart = -1;
-    let blackoutStart = -1;
-    let blackoutDone: (() => void) | null = null;
     let raf = 0;
     let last = 0;
+
+    // Blackout timeline position, 0 → BLACKOUT_DUR seconds, and which way
+    // it's playing (+1 forward into black, -1 back out). `active` holds from
+    // the first forward frame until a restore fully plays out — including
+    // while it sits finished at full black.
+    let active = false;
+    let dir = 1;
+    let pos = 0;
+    let pending: { dir: number; resolve: () => void } | null = null;
+    let fallback: ReturnType<typeof setTimeout>;
+
+    const drawBlackout = (e: number, irisT: string) => {
+      discGroupRef.current?.setAttribute("transform", irisT);
+      // Grow to the farthest viewBox corner from the iris — the svg box
+      // always covers the screen, so that covers the screen too.
+      const ix = CX + iris.x;
+      const iy = CY + iris.y;
+      const rEnd = Math.hypot(Math.max(ix, W - ix), Math.max(iy, H - iy)) + 4;
+      const r0 = IRIS_W / 2;
+      const dp = easeInCubic(clamp01(e / DISC_DUR));
+      discRef.current?.setAttribute("r", e <= 0 ? "0" : (r0 + (rEnd - r0) * dp).toFixed(2));
+      wedgeCentres.forEach((c, k) => {
+        const w = wedgeRefs.current[k];
+        if (!w) return;
+        const wp = easeInOutCubic(clamp01((e - WEDGE_START - k * WEDGE_STAGGER) / WEDGE_DUR));
+        w.setAttribute(
+          "d",
+          wp >= 1 ? "" : wedgePath(c - WEDGE_HALF, c + WEDGE_HALF - 2 * WEDGE_HALF * wp)
+        );
+      });
+    };
+
+    // Reaching either end settles the blackout and resolves whoever asked
+    // for that end. Back at 0 it's fully undone: disc gone, wedges whole.
+    const settle = () => {
+      if (dir < 0) {
+        active = false;
+        pos = 0;
+        // Backed out with the iris centred; only now does it go back to
+        // following the cursor (easing over, via the usual follow).
+        target.x = pointer.x;
+        target.y = pointer.y;
+        start();
+      } else {
+        pos = BLACKOUT_DUR;
+      }
+      clearTimeout(fallback);
+      if (pending && pending.dir === dir) {
+        pending.resolve();
+        pending = null;
+      }
+    };
 
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
@@ -131,7 +197,7 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
       iris.x += (target.x - iris.x) * f;
       iris.y += (target.y - iris.y) * f;
       // Held open through the blackout, even if the pointer wanders off.
-      const wantOpen = openRef.current || blackoutStart >= 0;
+      const wantOpen = openRef.current || active;
       lid += ((wantOpen ? 1 : 0) - lid) * l;
       // Snap the last sliver shut — a sub-pixel slit still antialiases into
       // a visible hairline across the screen.
@@ -154,34 +220,11 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
       irisRef.current?.setAttribute("transform", irisT);
 
       let blackoutRunning = false;
-      if (blackoutStart >= 0) {
-        const e = Math.max(0, (now - blackoutStart) / 1000);
-        discGroupRef.current?.setAttribute("transform", irisT);
-        // Grow to the farthest viewBox corner from the iris — the svg box
-        // always covers the screen, so that covers the screen too.
-        const ix = CX + iris.x;
-        const iy = CY + iris.y;
-        const rEnd = Math.hypot(Math.max(ix, W - ix), Math.max(iy, H - iy)) + 4;
-        const r0 = IRIS_W / 2;
-        const dp = easeInCubic(clamp01(e / DISC_DUR));
-        discRef.current?.setAttribute("r", (r0 + (rEnd - r0) * dp).toFixed(2));
-        wedgeCentres.forEach((c, k) => {
-          const w = wedgeRefs.current[k];
-          if (!w) return;
-          const wp = easeInOutCubic(
-            clamp01((e - WEDGE_START - k * WEDGE_STAGGER) / WEDGE_DUR)
-          );
-          w.setAttribute(
-            "d",
-            wp >= 1 ? "" : wedgePath(c - WEDGE_HALF, c + WEDGE_HALF - 2 * WEDGE_HALF * wp)
-          );
-        });
-        if (e >= BLACKOUT_DUR) {
-          blackoutDone?.();
-          blackoutDone = null;
-        } else {
-          blackoutRunning = true;
-        }
+      if (active) {
+        pos = Math.min(BLACKOUT_DUR, Math.max(0, pos + dir * dt));
+        drawBlackout(pos, irisT);
+        if ((dir > 0 && pos >= BLACKOUT_DUR) || (dir < 0 && pos <= 0)) settle();
+        else blackoutRunning = true;
       }
 
       const settled =
@@ -207,11 +250,13 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     // Track the pointer even while closed, so the eye opens already looking
     // at the cursor (i.e. at the nav tab that opened it).
     const onMove = (e: PointerEvent) => {
-      if (blackoutStart >= 0) return; // gaze holds still once it's leaving
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      target.x = nx * MAX_DX;
-      target.y = ny * MAX_DY;
+      pointer.x = nx * MAX_DX;
+      pointer.y = ny * MAX_DY;
+      if (active) return; // gaze holds still through the blackout
+      target.x = pointer.x;
+      target.y = pointer.y;
       if (openRef.current || lid > 0.001) start();
     };
     window.addEventListener("pointermove", onMove);
@@ -220,7 +265,7 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     // Only blinks an eye that's fully open — never mid-open or closing.
     let blinkTimer: ReturnType<typeof setTimeout>;
     const blinkNow = () => {
-      if (!openRef.current || lid < 0.95 || blackoutStart >= 0) return false;
+      if (!openRef.current || lid < 0.95 || active) return false;
       blinkStart = performance.now();
       start();
       return true;
@@ -240,23 +285,53 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     };
     scheduleBlink();
 
-    // Only an eye that's mostly open can play it — otherwise the caller falls
-    // back to the regular curtain. The timeout resolves it even if rAF is
-    // paused (background tab), so navigation can never hang on it.
-    let blackoutTimer: ReturnType<typeof setTimeout>;
-    blackoutRef.current = () => {
-      if (blackoutStart >= 0 || lid < 0.5) return null;
+    // Sets the blackout playing towards one end, picking up from wherever it
+    // is now (so a quick toggle turns it round mid-way instead of jumping).
+    // The timeout settles it even if rAF is paused (background tab), so
+    // nothing awaiting it can ever hang.
+    const play = (d: number) => {
+      dir = d;
+      active = true;
       blinkStart = -1;
-      blackoutStart = performance.now();
-      start();
+      // A superseded request is simply dropped (never resolved): whatever
+      // was waiting on it — opening Archive, say — was cancelled by this.
+      clearTimeout(fallback);
       return new Promise<void>((resolve) => {
-        blackoutDone = resolve;
-        blackoutTimer = setTimeout(resolve, BLACKOUT_DUR * 1000 + 400);
+        pending = { dir: d, resolve };
+        const left = d > 0 ? BLACKOUT_DUR - pos : pos;
+        fallback = setTimeout(() => {
+          drawBlackout(d > 0 ? BLACKOUT_DUR : 0, irisRef.current?.getAttribute("transform") ?? "");
+          settle();
+        }, left * 1000 + 400);
+        start();
       });
     };
 
+    // Only an eye that's mostly open can black out — otherwise the caller
+    // falls back to its plain version (the curtain, a background fade).
+    api.current = {
+      blackout: () => {
+        if (active && dir > 0 && pos >= BLACKOUT_DUR) return Promise.resolve();
+        if (!active && lid < 0.5) return null;
+        return play(1);
+      },
+      // Backs out looking straight ahead. From full black the iris can just
+      // be recentred (it's all black — nothing to see move); from part-way
+      // it eases there.
+      restore: () => {
+        if (!active) return null;
+        target.x = 0;
+        target.y = 0;
+        if (pos >= BLACKOUT_DUR) {
+          iris.x = 0;
+          iris.y = 0;
+        }
+        return play(-1);
+      },
+    };
+
     return () => {
-      clearTimeout(blackoutTimer);
+      clearTimeout(fallback);
       window.removeEventListener("pointermove", onMove);
       cancelAnimationFrame(raf);
       clearTimeout(blinkTimer);

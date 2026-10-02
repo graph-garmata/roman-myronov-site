@@ -45,6 +45,11 @@ const contactLinks: {
 // swap reads as one motion rather than a hard stop. (Slide-out is 0.65s.)
 const PANEL_SWAP_DELAY = 450;
 
+// Closing Archive waits this long — for its words to slide out (0.5s) —
+// before the eye starts backing out of its blackout, so the white words and
+// the reopening white wedges never overlap.
+const ARCHIVE_RESTORE_DELAY = 420;
+
 // The load reveal is two-step: each black label box draws in left→right
 // (.hl::before, staggered by --box-delay), then its copy rises out of the
 // mask once the box is mostly drawn — BOX_LEAD seconds after the box starts.
@@ -207,26 +212,73 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Archive is a black takeover. Opening it plays the eye's blackout first
+  // (the eye is open — its tab is being hovered) and only brings the list in
+  // once the screen is black; closing plays the blackout backwards, so Home
+  // reappears through the iris. Without an open eye (touch, keyboard) the
+  // background simply fades to black instead. `archiveArmed` covers the wait
+  // for the blackout, so the tab already reads as open and a second click
+  // cancels it; the token drops a blackout that was cancelled mid-way.
+  const [archiveArmed, setArchiveArmed] = useState(false);
+  const archiveToken = useRef(0);
+  const restoreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    },
+    []
+  );
+  const openArchive = () => {
+    if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    const token = ++archiveToken.current;
+    const done = eyeRef.current?.blackout();
+    if (!done) {
+      setArchiveOpen(true);
+      return;
+    }
+    setArchiveArmed(true);
+    done.then(() => {
+      if (token !== archiveToken.current) return;
+      setArchiveArmed(false);
+      setArchiveOpen(true);
+    });
+  };
+  const closeArchive = () => {
+    archiveToken.current++;
+    setArchiveArmed(false);
+    const wasOpen = archiveOpen;
+    setArchiveOpen(false);
+    if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    // Still mid-blackout (the list never came in)? Turn straight round.
+    if (!wasOpen) eyeRef.current?.restore();
+    else
+      restoreTimer.current = setTimeout(
+        () => eyeRef.current?.restore(),
+        ARCHIVE_RESTORE_DELAY
+      );
+  };
+  const archiveActive = archiveOpen || archiveArmed;
+
   // Projects (left), Archive (right) and Contact are mutually exclusive — at
   // most one open at a time. Opening one while another is open slides that one
   // out first, then slides the requested one in after the swap delay.
   type Panel = "projects" | "archive" | "contact";
   const openPanel = (name: Panel) => {
     if (name === "projects") setProjectsOpen(true);
-    else if (name === "archive") setArchiveOpen(true);
+    else if (name === "archive") openArchive();
     else openContact();
   };
   const togglePanel = (name: Panel, isOpen: boolean) => {
     if (swapTimer.current) clearTimeout(swapTimer.current);
     if (isOpen) {
       if (name === "projects") setProjectsOpen(false);
-      else if (name === "archive") setArchiveOpen(false);
+      else if (name === "archive") closeArchive();
       else setContactOpen(false);
       return;
     }
-    if (projectsOpen || archiveOpen || contactOpen) {
+    if (projectsOpen || archiveActive || contactOpen) {
       setProjectsOpen(false);
-      setArchiveOpen(false);
+      if (archiveActive) closeArchive();
       setContactOpen(false);
       swapTimer.current = setTimeout(() => openPanel(name), PANEL_SWAP_DELAY);
     } else {
@@ -235,7 +287,7 @@ export default function Home() {
   };
 
   const toggleProjects = () => togglePanel("projects", projectsOpen);
-  const toggleArchive = () => togglePanel("archive", archiveOpen);
+  const toggleArchive = () => togglePanel("archive", archiveActive);
   const toggleContact = () => togglePanel("contact", contactOpen);
 
   // Clock/colophon slide from their resting spot (row 3, bottom-aligned —
@@ -393,8 +445,8 @@ export default function Home() {
               <button
                 type="button"
                 {...eyeHover}
-                className={`nav__toggle${archiveOpen ? " is-open" : ""}`}
-                aria-expanded={archiveOpen}
+                className={`nav__toggle${archiveActive ? " is-open" : ""}`}
+                aria-expanded={archiveActive}
                 onClick={toggleArchive}
                 style={boxDelay(0.22)}
               >
@@ -403,7 +455,7 @@ export default function Home() {
                     <Roll>Archive</Roll>
                   </Reveal>
                   <span
-                    className={`nav__x${archiveOpen ? " is-open" : ""}`}
+                    className={`nav__x${archiveActive ? " is-open" : ""}`}
                     aria-hidden
                   >
                     <CloseIcon />
@@ -517,7 +569,9 @@ export default function Home() {
       </div>
 
       {/* ---- Eye: opens behind the figure while a nav tab or case is hovered ---- */}
-      <Eye ref={eyeRef} open={eyeOpen} />
+      {/* Kept shut over an Archive opened without the blackout (touch,
+          keyboard) — a held blackout keeps itself open regardless. */}
+      <Eye ref={eyeRef} open={eyeOpen && !archiveOpen} />
 
       {/* ---- Centered figure ---- */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
