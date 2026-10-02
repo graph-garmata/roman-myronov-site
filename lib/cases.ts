@@ -1742,12 +1742,220 @@ const genie: CaseStudy = {
   ],
 };
 
+const volta: CaseStudy = {
+  slug: "volta",
+  name: "Volta",
+  scope: "Strategy, Visual Identity, Communication",
+  talents: [{ name: "Roman Myronov", role: "Design Director" }],
+  problem:
+    "Volta Buro is a real estate marketing buro with a mission to power up real estate — charging developers' businesses with brands, integrated marketing and customised technology.",
+  blocks: [
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/volta/film-01.mp4",
+          webm: "/images/volta/film-01.webm",
+          poster: "/images/volta/film-01-poster.jpg",
+          alt: "The Volta mark sparking to life",
+        },
+      },
+    },
+    {
+      type: "copy",
+      label: "Buro",
+      text: "Volta Buro is a Real Estate marketing buro with a mission to Power-up real estate. They power up developers' businesses using a system of specialized real estate marketing and charge their clients' business with powerful brands, integrated marketing & sales solutions and customized technologies.",
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/logo.webp",
+        alt: "The Volta Buro logo lockup",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/mark.webp",
+        alt: "The mark built from a house silhouette and an R",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/typeface.webp",
+        alt: "PP Neue Montreal specimen in the brand orange",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/volta/tote.webp",
+        alt: "A We Power Up Real Estate tote in an industrial doorway",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/volta/film-02.mp4",
+          webm: "/images/volta/film-02.webm",
+          poster: "/images/volta/film-02-poster.jpg",
+          alt: "The Volta wordmark animating",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/volta/film-03.mp4",
+          webm: "/images/volta/film-03.webm",
+          poster: "/images/volta/film-03-poster.jpg",
+          alt: "The Real System presentation",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/volta/cards.webp",
+        alt: "Business cards in black and orange",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/portfolio.webp",
+        alt: "Developer project work across the buro's portfolio",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/volta/film-04.mp4",
+          webm: "/images/volta/film-04.webm",
+          poster: "/images/volta/film-04-poster.jpg",
+          alt: "What we do",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/character.webp",
+        alt: "The brand character and a recruitment poster",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/social.webp",
+        alt: "Social posts on a city backdrop",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/objects.webp",
+        alt: "The brand's dimensional objects and how they relate",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/presentation.webp",
+        alt: "Presentation material for real estate developers",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1600 / 2400,
+      cell: {
+        kind: "image",
+        src: "/images/volta/cap.webp",
+        alt: "A branded cap on folded clothing",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/volta/icons.webp",
+        alt: "The icon set",
+      },
+    },
+    {
+      type: "full",
+      ratio: 2400 / 1500,
+      cell: {
+        kind: "image",
+        src: "/images/volta/apparel.webp",
+        alt: "Branded apparel",
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "video",
+        video: {
+          mp4: "/images/volta/film-05.mp4",
+          webm: "/images/volta/film-05.webm",
+          poster: "/images/volta/film-05-poster.jpg",
+          alt: "The site on a laptop",
+        },
+      },
+    },
+    {
+      type: "full",
+      ratio: 1920 / 1200,
+      cell: {
+        kind: "image",
+        src: "/images/volta/website.webp",
+        alt: "Website screens for the buro",
+      },
+    },
+  ],
+};
+
 const studies: Record<string, CaseStudy> = {
   luminar,
   estyl,
   prostir,
   specialty,
   genie,
+  volta,
 };
 
 export function getCase(slug: string): CaseStudy | undefined {
@@ -1766,7 +1974,7 @@ export const caseOrder: CaseMeta[] = [
   { slug: "specialty", name: "Specialty", done: true, cover: "/images/specialty/wolf.webp" },
   { slug: "prostir", name: "Prostir", done: true, cover: "/images/prostir/signage-exterior.webp" },
   { slug: "estyl", name: "Estyl", done: true, cover: "/images/estyl/socks.webp" },
-  { slug: "volta", name: "Volta", done: false },
+  { slug: "volta", name: "Volta", done: true, cover: "/images/volta/mark.webp" },
   { slug: "grail", name: "Grail", done: false },
   { slug: "townie", name: "Townie", done: false },
   { slug: "genie", name: "Genie", done: true, cover: "/images/genie/wordmark.webp" },
