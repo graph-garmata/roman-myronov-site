@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Clock from "@/components/clock";
@@ -36,17 +43,23 @@ const contactLinks: {
 // swap reads as one motion rather than a hard stop. (Slide-out is 0.65s.)
 const PANEL_SWAP_DELAY = 450;
 
+// The load reveal is two-step: each black label box draws in left→right
+// (.hl::before, staggered by --box-delay), then its copy rises out of the
+// mask once the box is mostly drawn — BOX_LEAD seconds after the box starts.
+const BOX_LEAD = 0.45;
+const boxDelay = (d: number) => ({ "--box-delay": `${d}s` }) as CSSProperties;
+
 function CloseIcon() {
   return (
-    <svg className="nav__x-icon" viewBox="0 0 40 40" fill="none" aria-hidden>
+    <svg className="nav__x-icon" viewBox="0 0 38 38" fill="none" aria-hidden>
       <path
-        d="M2 2 L38 38"
+        d="M0.62 1 L37.39 37.77"
         stroke="currentColor"
         strokeWidth="4"
         pathLength="1"
       />
       <path
-        d="M38 2 L2 38"
+        d="M37.39 1 L0.62 37.77"
         stroke="currentColor"
         strokeWidth="4"
         pathLength="1"
@@ -232,8 +245,12 @@ export default function Home() {
     >
       <div className="home__inner">
         <h1 className="intro">
-          <Reveal delay={0.05}>Roman Myronov</Reveal>
-          <Reveal delay={0.12}>Designer and Art Director</Reveal>
+          <span className="hl hl--line" style={boxDelay(0.05)}>
+            <Reveal delay={0.05 + BOX_LEAD}>Roman Myronov</Reveal>
+          </span>
+          <span className="hl hl--line" style={boxDelay(0.12)}>
+            <Reveal delay={0.12 + BOX_LEAD}>Designer and Art Director</Reveal>
+          </span>
         </h1>
 
         {/* Archive's lead line — the same copy the /archive page shows,
@@ -308,9 +325,10 @@ export default function Home() {
                 className={`nav__toggle${projectsOpen ? " is-open" : ""}`}
                 aria-expanded={projectsOpen}
                 onClick={toggleProjects}
+                style={boxDelay(0.1)}
               >
                 <span className="nav__toggle-inner">
-                  <Reveal delay={0.1}>
+                  <Reveal delay={0.1 + BOX_LEAD}>
                     <Roll>Projects</Roll>
                   </Reveal>
                   <span
@@ -323,8 +341,8 @@ export default function Home() {
               </button>
             </li>
             <li>
-              <Link href="/about" className="nav__link">
-                <Reveal delay={0.16}>
+              <Link href="/about" className="nav__link" style={boxDelay(0.16)}>
+                <Reveal delay={0.16 + BOX_LEAD}>
                   <Roll>About</Roll>
                 </Reveal>
               </Link>
@@ -335,9 +353,10 @@ export default function Home() {
                 className={`nav__toggle${archiveOpen ? " is-open" : ""}`}
                 aria-expanded={archiveOpen}
                 onClick={toggleArchive}
+                style={boxDelay(0.22)}
               >
                 <span className="nav__toggle-inner">
-                  <Reveal delay={0.22}>
+                  <Reveal delay={0.22 + BOX_LEAD}>
                     <Roll>Archive</Roll>
                   </Reveal>
                   <span
@@ -350,8 +369,8 @@ export default function Home() {
               </button>
             </li>
             <li>
-              <Link href="/dump" className="nav__link">
-                <Reveal delay={0.28}>
+              <Link href="/dump" className="nav__link" style={boxDelay(0.28)}>
+                <Reveal delay={0.28 + BOX_LEAD}>
                   <Roll>Dump</Roll>
                 </Reveal>
               </Link>
@@ -362,9 +381,10 @@ export default function Home() {
                 className={`nav__toggle${contactOpen ? " is-open" : ""}`}
                 aria-expanded={contactOpen}
                 onClick={toggleContact}
+                style={boxDelay(0.34)}
               >
                 <span className="nav__toggle-inner">
-                  <Reveal delay={0.34}>
+                  <Reveal delay={0.34 + BOX_LEAD}>
                     <Roll>Contact</Roll>
                   </Reveal>
                   <span className={`nav__x${contactOpen ? " is-open" : ""}`} aria-hidden>
@@ -377,14 +397,19 @@ export default function Home() {
         </nav>
 
         <div
-          className="clock body"
+          className="clock body hl"
           ref={clockRef}
-          style={contactOpen ? { transform: `translate(${clockShift.x}px, ${clockShift.y}px)` } : undefined}
+          style={{
+            ...boxDelay(0.2),
+            ...(contactOpen
+              ? { transform: `translate(${clockShift.x}px, ${clockShift.y}px)` }
+              : undefined),
+          }}
         >
-          <Reveal delay={0.2}>
+          <Reveal delay={0.2 + BOX_LEAD}>
             <span>Local Time</span>
           </Reveal>
-          <Reveal delay={0.25}>
+          <Reveal delay={0.25 + BOX_LEAD}>
             <Clock />
           </Reveal>
         </div>
@@ -396,19 +421,20 @@ export default function Home() {
         />
 
         <div
-          className="colophon body"
+          className="colophon body hl"
           ref={colophonRef}
-          style={
-            contactOpen
+          style={{
+            ...boxDelay(0.2),
+            ...(contactOpen
               ? { transform: `translate(${colophonShift.x}px, ${colophonShift.y}px)` }
-              : undefined
-          }
+              : undefined),
+          }}
         >
           <div className="colophon__text">
-            <Reveal delay={0.2}>
+            <Reveal delay={0.2 + BOX_LEAD}>
               <span>©RM</span>
             </Reveal>
-            <Reveal delay={0.25}>
+            <Reveal delay={0.25 + BOX_LEAD}>
               <span>2026</span>
             </Reveal>
           </div>
@@ -448,7 +474,7 @@ export default function Home() {
 
       {/* ---- Centered figure ---- */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="figure" src="/images/figure.webp" alt="" />
+      <img className="figure" src="/images/figure-cutout.webp" alt="" />
 
       {/* Rendered via a portal into <body> so it escapes .home's
           overflow:hidden regardless of stacking context, same reasoning as

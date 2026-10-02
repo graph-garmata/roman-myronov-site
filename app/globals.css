@@ -123,12 +123,15 @@ a {
    Home — full-screen grid layout
    ============================================================ */
 .home {
+  /* Wider than the site's 10px: the grid holds the label *text*, and each
+     box's 5px outside stroke (see .hl) reaches out to the usual 10px edge. */
+  --margin: 15px;
   position: fixed;
   inset: 0;
   padding: var(--margin);
   overflow: hidden;
   overflow-anchor: none;
-  background: var(--bg);
+  background: #e7e7e7;
   color: #ffffff;
   transition: background-color 0.6s var(--ease), color 0.6s var(--ease);
 }
@@ -153,6 +156,54 @@ a {
   column-gap: var(--gutter);
   row-gap: var(--gutter);
   align-items: start;
+}
+
+/* --- Label boxes: white type on black blocks over the light-grey ground,
+   like the design's frames with a 5px *outside* stroke. The box hugs the
+   text and the stroke is a spread shadow, so it adds an even 5px on every
+   edge without affecting layout — stacked boxes keep the 52px line pitch
+   and their strokes simply overlap. Boxes stay black even under Contact's
+   light takeover, so their text is pinned white rather than inheriting
+   .home's color. --- */
+.hl {
+  display: block;
+  width: fit-content;
+  color: #ffffff;
+}
+
+/* The black fill lives on a pseudo-element (inset -5px = the outside
+   stroke) so it can draw in on load without scaling the copy inside or
+   fighting the element's own transforms (the nav tab's step-out). Two-step
+   load reveal: the box scales in left→right, staggered by --box-delay, then
+   the copy's mask reveal follows (delays set in components/home.tsx). */
+.hl,
+.nav__link,
+.nav__toggle {
+  position: relative;
+  isolation: isolate;
+}
+
+.hl::before,
+.nav__link::before,
+.nav__toggle::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  background: #000000;
+  transform-origin: left center;
+  transition: transform 0.6s var(--ease) var(--box-delay, 0s);
+}
+
+.home:not(.is-loaded) .hl::before,
+.home:not(.is-loaded) .nav__link::before,
+.home:not(.is-loaded) .nav__toggle::before {
+  transform: scaleX(0);
+}
+
+/* Heading lines: exactly one line (1em) tall. */
+.hl--line {
+  height: 1em;
 }
 
 /* --- Intro (name + role) --- */
@@ -240,12 +291,16 @@ a {
 
 .cases__item {
   appearance: none;
-  background: none;
+  display: inline-block;
+  vertical-align: top;
+  height: 1em;
+  background: #000000;
+  box-shadow: 0 0 0 5px #000000;
   border: none;
   padding: 0;
   margin: 0;
   font: inherit;
-  color: inherit;
+  color: #ffffff;
   letter-spacing: inherit;
   text-align: left;
   cursor: pointer;
@@ -322,65 +377,80 @@ a {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Flex, not block, so the inline-level boxes inside add no line-box slack —
+   the stacked boxes butt together. */
+.nav li {
+  display: flex;
+}
+
+.nav__link,
+.nav__toggle {
+  height: 1em;
+  padding: 0;
+  background: none;
+  color: #ffffff;
 }
 
 .nav__link {
   display: inline-block;
   vertical-align: top;
-  color: inherit;
 }
 
 /* Shared by the Projects and Contact toggle buttons in the nav column. */
 .nav__toggle {
   appearance: none;
-  background: none;
   border: none;
-  padding: 0;
   margin: 0;
   font: inherit;
   letter-spacing: inherit;
-  color: inherit;
   cursor: pointer;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   transform: translateX(0);
-  transition: transform 0.5s var(--ease);
+  transition: transform 0.45s var(--ease);
 }
 
-/* When active, nudge the tab left to give the × room. */
+/* When active, the tab steps out ahead of the others — left by exactly the
+   width the × adds (8px gap + 38px icon), so its right edge stays roughly
+   where the label ended — and sits on top, so neighbours' strokes don't
+   clip it. */
 .nav__toggle.is-open {
-  transform: translateX(-50px);
+  transform: translateX(calc(-46em / 52));
+  z-index: 1;
 }
 
 .nav__toggle-inner {
-  position: relative;
   display: inline-flex;
   align-items: center;
+  height: 1em;
 }
 
-/* Close (×) icon — absolutely placed so it never shifts layout; revealed by
-   a trim-path stroke draw (no fade). */
+/* Close (×) icon — sits inside the tab's own box, 8px after the label, so
+   the open tab reads as one rectangle that grows to the right. Collapsed to
+   zero width while closed; opening widens it (pushing the box edge out) as
+   the strokes draw in (trim-path, no fade). 38px at the 52px heading. */
 .nav__x {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 0.18em;
   display: inline-flex;
   align-items: center;
-  padding: 0.25em;
-  /* Non-interactive (and out of the way) until drawn in. */
-  pointer-events: none;
+  width: 0;
+  margin-left: 0;
+  overflow: hidden;
+  transition: width 0.45s var(--ease), margin-left 0.45s var(--ease);
 }
 
-/* Clickable only once open, so the invisible × can't catch stray clicks. */
 .nav__x.is-open {
-  pointer-events: auto;
+  width: calc(38em / 52);
+  margin-left: calc(8em / 52);
 }
 
 .nav__x-icon {
-  width: 0.62em;
-  height: 0.62em;
+  width: calc(38em / 52);
+  height: calc(38em / 52);
   flex-shrink: 0;
   overflow: visible;
 }
@@ -508,6 +578,11 @@ a {
   transition: transform 0.6s var(--ease);
 }
 
+/* The colophon's box fills its whole column (mark pinned right). */
+.colophon.hl {
+  width: auto;
+}
+
 .colophon__text {
   display: flex;
   flex-direction: column;
@@ -517,24 +592,21 @@ a {
   display: block;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.6s ease 0.3s, filter 0.6s var(--ease);
+  /* Fades in once the colophon's box has drawn in. */
+  transition: opacity 0.6s ease 0.75s;
 }
 
 .home.is-loaded .colophon__mark {
   opacity: 1;
 }
 
-/* The mark is a near-white icon — invert it to read on Contact's light bg. */
-.home.is-contact-open .colophon__mark {
-  filter: invert(1);
-}
 
 /* --- Centered figure --- */
 .figure {
   position: absolute;
   top: 50%;
   left: 50%;
-  height: 72vh; /* image has ~15% dark padding around the figure */
+  height: 78.67vh; /* 708 / 900 in the design; transparent padding around the figure */
   width: auto;
   transform: translate(-50%, -50%);
   z-index: 1;
@@ -648,7 +720,7 @@ a {
    ============================================================ */
 @media (max-width: 700px) {
   .home {
-    --margin: 8px;
+    --margin: 13px; /* 8px to the outer edge of the label boxes' stroke */
     --gutter: 20px;
     --fs-heading: 32px;
     --columns: 5;
