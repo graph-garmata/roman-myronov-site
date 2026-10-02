@@ -28,12 +28,71 @@ const PLAY_MARGIN = "0px";
 // that overshoots and comes straight back doesn't have to refetch it.
 const RECLAIM_MS = 5000;
 
+/** Makes the sound toggle trail the cursor while it's over the film, so the
+ * whole frame becomes the click target; on leave it eases back to its corner.
+ * Position is a translate from the button's resting spot, computed from layout
+ * offsets (unaffected by the transform itself). Mouse/trackpad only — on touch
+ * the button just stays put. */
+function useMagnetic(ref: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const btn = ref.current;
+    const area = btn?.parentElement;
+    if (!btn || !area) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let tx = 0, ty = 0; // target offset
+    let x = 0, y = 0; // current offset
+    let raf = 0;
+
+    const tick = () => {
+      x += (tx - x) * 0.18;
+      y += (ty - y) * 0.18;
+      if (Math.abs(tx - x) < 0.1 && Math.abs(ty - y) < 0.1) {
+        x = tx;
+        y = ty;
+        raf = 0;
+      } else raf = requestAnimationFrame(tick);
+      btn.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const r = area.getBoundingClientRect();
+      // Rect can be slightly scaled by the block's tilt; map back to layout px.
+      const sx = area.offsetWidth / r.width || 1;
+      const sy = area.offsetHeight / r.height || 1;
+      tx = (e.clientX - r.left) * sx - (btn.offsetLeft + btn.offsetWidth / 2);
+      ty = (e.clientY - r.top) * sy - (btn.offsetTop + btn.offsetHeight / 2);
+      kick();
+    };
+    const onLeave = () => {
+      tx = 0;
+      ty = 0;
+      kick();
+    };
+
+    area.addEventListener("pointermove", onMove);
+    area.addEventListener("pointerleave", onLeave);
+    return () => {
+      area.removeEventListener("pointermove", onMove);
+      area.removeEventListener("pointerleave", onLeave);
+      cancelAnimationFrame(raf);
+      btn.style.transform = "";
+    };
+  }, [ref]);
+}
+
 /** Plays a <video> only while it's actually in the viewport; pauses it
  * otherwise — so having many videos on a page doesn't mean many simultaneous
  * decodes. The poster holds the frame until it starts. */
 function VideoCell({ video }: { video: CaseVideo }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
+  const soundRef = useRef<HTMLButtonElement>(null);
+  useMagnetic(soundRef);
 
   useEffect(() => {
     const el = ref.current;
@@ -73,6 +132,7 @@ function VideoCell({ video }: { video: CaseVideo }) {
       </video>
       {video.sound && (
         <button
+          ref={soundRef}
           type="button"
           className="case-sound"
           aria-pressed={!muted}

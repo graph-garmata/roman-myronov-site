@@ -448,7 +448,7 @@ export default function Home() {
 
       {/* ---- Centered figure ---- */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="figure" src="/images/figure.png" alt="" />
+      <img className="figure" src="/images/figure.webp" alt="" />
 
       {/* Rendered via a portal into <body> so it escapes .home's
           overflow:hidden regardless of stacking context, same reasoning as
