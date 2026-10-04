@@ -1962,23 +1962,35 @@ export function getCase(slug: string): CaseStudy | undefined {
   return studies[slug];
 }
 
-export type CaseMeta = { slug: string; name: string; done: boolean; cover?: string };
+export type CaseMeta = { slug: string; name: string; done: boolean; preview?: CaseVideo };
+
+const preview = (slug: string): CaseVideo => ({
+  mp4: `/images/${slug}/preview.mp4`,
+  webm: `/images/${slug}/preview.webm`,
+  poster: `/images/${slug}/preview-poster.jpg`,
+});
 
 // Single source of truth for case order and completion status — shared by
-// the home menu and the previous/next navigation on case pages. `cover` is
-// the still shown in the home menu's hover preview (see components/home.tsx);
-// cases without one yet just don't show a preview when hovered.
+// the home menu and the previous/next navigation on case pages. `preview` is
+// the short silent loop played in the home menu's hover frame (see
+// components/home.tsx) — 640×400, sized for the 320px frame at 2×; cases
+// without one yet show the empty frame.
 export const caseOrder: CaseMeta[] = [
-  { slug: "luminar", name: "Luminar", done: true, cover: "/images/luminar/block-1.webp" },
+  { slug: "luminar", name: "Luminar", done: true, preview: preview("luminar") },
   { slug: "denormalized", name: "Denormalized", done: false },
-  { slug: "specialty", name: "Specialty", done: true, cover: "/images/specialty/wolf.webp" },
-  { slug: "prostir", name: "Prostir", done: true, cover: "/images/prostir/signage-exterior.webp" },
-  { slug: "estyl", name: "Estyl", done: true, cover: "/images/estyl/socks.webp" },
-  { slug: "volta", name: "Volta", done: true, cover: "/images/volta/mark.webp" },
+  { slug: "specialty", name: "Specialty", done: true, preview: preview("specialty") },
+  { slug: "prostir", name: "Prostir", done: true, preview: preview("prostir") },
+  { slug: "estyl", name: "Estyl", done: true, preview: preview("estyl") },
+  { slug: "volta", name: "Volta", done: true, preview: preview("volta") },
   { slug: "grail", name: "Grail", done: false },
   { slug: "townie", name: "Townie", done: false },
-  { slug: "genie", name: "Genie", done: true, cover: "/images/genie/wordmark.webp" },
+  { slug: "genie", name: "Genie", done: true, preview: preview("genie") },
 ];
+
+/** What the home menu lists. Unfinished cases stay in `caseOrder` so the
+ * intended running order is recorded in one place, but they're kept out of
+ * the menu until they have a page worth opening — flip `done` to list one. */
+export const visibleCases: CaseMeta[] = caseOrder.filter((c) => c.done);
 
 export function getCaseMeta(slug: string): CaseMeta {
   const found = caseOrder.find((c) => c.slug === slug);

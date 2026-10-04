@@ -20,7 +20,9 @@ const archiveItems = [
   { name: "Linen" },
   { name: "wcf2023" },
   { name: "Boko" },
-  { name: "Specialty" },
+  { name: "Clever" },
+  { name: "RMJM" },
+  { name: "Soho" },
 ];
 
 export default function ArchivePage() {

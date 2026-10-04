@@ -17,7 +17,7 @@ import { ArrowIcon } from "@/components/home-button";
 import ArchiveList from "@/components/archive-list";
 import Eye, { type EyeHandle } from "@/components/eye";
 import { usePageCover } from "@/components/page-transition";
-import { caseOrder } from "@/lib/cases";
+import { visibleCases } from "@/lib/cases";
 
 // Archive is no longer its own page — it opens as a right-side panel here.
 // (The /archive route is kept as a fallback for now.)
@@ -25,7 +25,9 @@ const archiveItems = [
   { name: "Linen" },
   { name: "wcf2023" },
   { name: "Boko" },
-  { name: "Specialty" },
+  { name: "Clever" },
+  { name: "RMJM" },
+  { name: "Soho" },
 ];
 
 const contactLinks: {
@@ -75,6 +77,74 @@ function CloseIcon() {
   );
 }
 
+// The name and title, one label box per line. Where the column is too narrow
+// for a phrase (mobile), it's measured into the rows it actually wraps to and
+// each row gets its own box — a box is exactly one line tall, so wrapped copy
+// would otherwise spill out below it.
+const INTRO = ["Roman Myronov", "Designer and Art Director"];
+
+function Intro() {
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [rows, setRows] = useState(INTRO);
+
+  useLayoutEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+    const compute = () => {
+      const next: string[] = [];
+      el.querySelectorAll<HTMLElement>(".intro__measure-line").forEach((line) => {
+        let top = 0;
+        let cur: string[] = [];
+        line.querySelectorAll<HTMLElement>("span").forEach((w) => {
+          if (cur.length && Math.abs(w.offsetTop - top) > 1) {
+            next.push(cur.join(" "));
+            cur = [];
+          }
+          if (!cur.length) top = w.offsetTop;
+          cur.push(w.textContent!.trim());
+        });
+        if (cur.length) next.push(cur.join(" "));
+      });
+      setRows((prev) =>
+        prev.length === next.length && prev.every((r, i) => r === next[i]) ? prev : next
+      );
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    if ("fonts" in document) document.fonts.ready.then(compute);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <h1 className="intro">
+      <span className="intro__measure" aria-hidden ref={measureRef}>
+        {INTRO.map((phrase) => (
+          <span key={phrase} className="intro__measure-line">
+            {phrase.split(" ").map((w, i) => (
+              <span key={i}>{w} </span>
+            ))}
+          </span>
+        ))}
+      </span>
+      {/* Stacked top-over-bottom, like .nav li, so a box's stroke never
+          covers the descenders of the row above. */}
+      {rows.map((row, i) => (
+        <span
+          key={i}
+          className="hl hl--line"
+          style={{ ...boxDelay(0.05 + i * 0.07), zIndex: rows.length - i }}
+        >
+          <Reveal delay={0.05 + i * 0.07 + BOX_LEAD}>{row}</Reveal>
+        </span>
+      ))}
+    </h1>
+  );
+}
+
+// The case hover preview only exists for a real hovering pointer.
+const canHover = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 export default function Home() {
   // Projects and Contact are independent now — both can be open at once
   // (Contact's link list makes room for Projects' case list by shifting
@@ -86,31 +156,59 @@ export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const homeRef = useRef<HTMLDivElement>(null);
 
-  // Case hover preview: a small still that tracks the cursor, top-left
-  // corner pinned to the pointer (see .case-preview). Position/src are only
+  // Case hover preview: a small looping film that tracks the cursor, top-left
+  // corner pinned to the pointer (see .case-preview). Position/slug are only
   // ever set on show/move and deliberately left in place on hide, same
   // reasoning as the footnote preview — resetting them would snap the
-  // still-visible, mid-transition-out image back to (0,0)/blank instead of
-  // letting it shrink in place. Cases without a cover yet still show the
-  // (empty) frame, just with no image inside.
-  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  // still-visible, mid-transition-out film back to (0,0)/blank instead of
+  // letting it shrink in place. Cases without a preview yet still show the
+  // (empty) frame, just with nothing inside.
+  const [previewSlug, setPreviewSlug] = useState<string | null>(null);
   const [previewPos, setPreviewPos] = useState<{ top: number; left: number } | null>(null);
   const [previewShown, setPreviewShown] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const showPreview = (cover: string | undefined, x: number, y: number) => {
+  const showPreview = (slug: string, x: number, y: number) => {
+    if (!canHover()) return;
     setPreviewPos({ top: y, left: x });
-    setPreviewSrc(cover ?? null);
+    setPreviewSlug(slug);
     setPreviewShown(true);
   };
+
+  // Every case's film sits stacked in the frame, so sliding between cases
+  // swaps instantly instead of waiting on a fresh load. They're only mounted
+  // once the cases list is first opened, so Home itself doesn't pull ~2MB of
+  // video nobody may hover — and never on touch, which has no hover at all
+  // (a tap's emulated mouseenter would only flash the frame mid-navigation).
+  const [previewsArmed, setPreviewsArmed] = useState(false);
+  const previewVideos = useRef(new Map<string, HTMLVideoElement>());
+
+  // Each hover plays its film from the start; the rest stay paused. On hide
+  // the film keeps running through the scale-out, then pauses.
+  useEffect(() => {
+    const videos = previewVideos.current;
+    videos.forEach((v, slug) => {
+      if (slug !== previewSlug) v.pause();
+    });
+    const v = previewSlug ? videos.get(previewSlug) : undefined;
+    if (!v) return;
+    if (previewShown) {
+      v.currentTime = 0;
+      v.play().catch(() => {});
+      return;
+    }
+    const t = setTimeout(() => v.pause(), 500);
+    return () => clearTimeout(t);
+  }, [previewSlug, previewShown]);
   const movePreview = (x: number, y: number) => setPreviewPos({ top: y, left: x });
   const hidePreview = () => setPreviewShown(false);
 
   // Hovering any nav tab or case link opens the eye. Leaving closes it after
   // a short grace period, so sliding between stacked items doesn't blink it
   // shut.
-  // Mouse only — touch has no hover to anchor the open/close to.
+  // Mouse only — touch has no hover to anchor the open/close to; there the
+  // eye only opens for a blackout (see blackout() in components/eye.tsx).
   const [eyeOpen, setEyeOpen] = useState(false);
   const eyeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eyeHover = {
@@ -132,8 +230,9 @@ export default function Home() {
     []
   );
 
-  // Leaving Home by a link while the eye is open plays the eye's blackout in
-  // place of the curtain; the curtain then reveals the next page as usual.
+  // Leaving Home by a link plays the eye's blackout in place of the curtain
+  // (opening the eye first if it isn't hovered open); the curtain then
+  // reveals the next page as usual.
   const eyeRef = useRef<EyeHandle>(null);
   const [leaving, setLeaving] = useState(false);
   usePageCover(() => {
@@ -149,6 +248,7 @@ export default function Home() {
   // even if the pointer never left the link (e.g. closed via the toggle).
   useEffect(() => {
     if (!projectsOpen) setPreviewShown(false);
+    else if (canHover()) setPreviewsArmed(true);
   }, [projectsOpen]);
 
   // .home should never actually scroll — it's the fixed, full-viewport
@@ -213,10 +313,9 @@ export default function Home() {
   }, []);
 
   // Archive is a black takeover. Opening it plays the eye's blackout first
-  // (the eye is open — its tab is being hovered) and only brings the list in
-  // once the screen is black; closing plays the blackout backwards, so Home
-  // reappears through the iris. Without an open eye (touch, keyboard) the
-  // background simply fades to black instead. `archiveArmed` covers the wait
+  // (opening the eye if it isn't hovered open — touch, keyboard) and only
+  // brings the list in once the screen is black; closing plays the blackout
+  // backwards, so Home reappears through the iris. `archiveArmed` covers the wait
   // for the blackout, so the tab already reads as open and a second click
   // cancels it; the token drops a blackout that was cancelled mid-way.
   const [archiveArmed, setArchiveArmed] = useState(false);
@@ -336,14 +435,7 @@ export default function Home() {
       className={`home${projectsOpen ? " is-open" : ""}${archiveOpen ? " is-archive-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}${leaving ? " is-leaving" : ""}`}
     >
       <div className="home__inner">
-        <h1 className="intro">
-          <span className="hl hl--line" style={boxDelay(0.05)}>
-            <Reveal delay={0.05 + BOX_LEAD}>Roman Myronov</Reveal>
-          </span>
-          <span className="hl hl--line" style={boxDelay(0.12)}>
-            <Reveal delay={0.12 + BOX_LEAD}>Designer and Art Director</Reveal>
-          </span>
-        </h1>
+        <Intro />
 
         {/* Archive's lead line — the same copy the /archive page shows,
             revealed with the shared mask animation when Archive opens. Mounted
@@ -355,7 +447,7 @@ export default function Home() {
         </p>
 
         <ul className="cases" aria-hidden={!projectsOpen}>
-          {caseOrder.map((c, i) => (
+          {visibleCases.map((c, i) => (
             <li
               key={c.slug}
               style={{ transitionDelay: projectsOpen ? `${0.06 + i * 0.035}s` : "0s" }}
@@ -365,7 +457,7 @@ export default function Home() {
                 className="cases__item"
                 tabIndex={projectsOpen ? 0 : -1}
                 {...eyeHover}
-                onMouseEnter={(e) => showPreview(c.cover, e.clientX, e.clientY)}
+                onMouseEnter={(e) => showPreview(c.slug, e.clientX, e.clientY)}
                 onMouseMove={(e) => movePreview(e.clientX, e.clientY)}
                 onMouseLeave={hidePreview}
               >
@@ -588,10 +680,28 @@ export default function Home() {
             style={previewPos ? { top: previewPos.top, left: previewPos.left } : undefined}
             aria-hidden
           >
-            {previewSrc && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={previewSrc} alt="" />
-            )}
+            {previewsArmed &&
+              visibleCases.map(
+                (c) =>
+                  c.preview && (
+                    <video
+                      key={c.slug}
+                      ref={(el) => {
+                        if (el) previewVideos.current.set(c.slug, el);
+                        else previewVideos.current.delete(c.slug);
+                      }}
+                      className={c.slug === previewSlug ? "is-active" : undefined}
+                      poster={c.preview.poster}
+                      muted
+                      loop
+                      playsInline
+                      preload="auto"
+                    >
+                      <source src={c.preview.webm} type="video/webm" />
+                      <source src={c.preview.mp4} type="video/mp4" />
+                    </video>
+                  )
+              )}
           </span>,
           document.body
         )}

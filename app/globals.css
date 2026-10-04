@@ -266,6 +266,7 @@ a {
 
 /* --- Intro (name + role) --- */
 .intro {
+  position: relative;
   grid-column: 1 / span 3;
   grid-row: 1;
   margin: 0;
@@ -275,6 +276,21 @@ a {
   letter-spacing: var(--track);
   transform: translateX(0);
   transition: transform 0.6s var(--ease);
+}
+
+/* A hidden copy of the intro at the column's width, word by word, that
+   components/home.tsx reads to find where each phrase wraps into rows. */
+.intro__measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro__measure-line {
+  display: block;
 }
 
 /* Name + title slide two columns to the right into cols 3–5 (Projects open),
@@ -393,9 +409,10 @@ a {
    top-left corner pinned to the pointer (same scale-in language as
    .about-footnote__image, but position follows the mouse instead of a
    fixed anchor — see the mousemove handler in home.tsx). 1920×1200
-   proportioned — width fixed, height follows via aspect-ratio. A static
-   image for now; will become a switching-image/video sequence later.
-   Cases without a cover yet still show the frame, just empty. */
+   proportioned — width fixed, height follows via aspect-ratio. Every
+   case's film is stacked inside; only the hovered one is shown (see
+   previewVideos in home.tsx). Cases without a preview yet still show the
+   frame, just empty. The Archive list reuses the frame with an <img>. */
 .case-preview {
   position: fixed;
   top: 0;
@@ -415,11 +432,22 @@ a {
   transform: scale(1);
 }
 
-.case-preview img {
+.case-preview img,
+.case-preview video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.case-preview video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.case-preview video.is-active {
+  opacity: 1;
 }
 
 /* --- Navigation (column 6) --- */
@@ -441,9 +469,24 @@ a {
 }
 
 /* Flex, not block, so the inline-level boxes inside add no line-box slack —
-   the stacked boxes butt together. */
+   the stacked boxes butt together.
+   Stacked top-over-bottom: each box's 5px outside stroke overlaps the next
+   one down, so each label sits above the one below it — otherwise About's
+   stroke covers Projects' "j" descender, and Contact's covers Dump's "p".
+   An open tab still comes to the very top (see .nav__toggle.is-open). */
 .nav li {
   display: flex;
+  position: relative;
+}
+
+.nav li:nth-child(1) { z-index: 5; }
+.nav li:nth-child(2) { z-index: 4; }
+.nav li:nth-child(3) { z-index: 3; }
+.nav li:nth-child(4) { z-index: 2; }
+.nav li:nth-child(5) { z-index: 1; }
+
+.nav li:has(.is-open) {
+  z-index: 6;
 }
 
 .nav__link,
@@ -475,11 +518,10 @@ a {
 
 /* When active, the tab steps out ahead of the others — left by exactly the
    width the × adds (8px gap + 38px icon), so its right edge stays roughly
-   where the label ended — and sits on top, so neighbours' strokes don't
-   clip it. */
+   where the label ended — and sits on top (its li is raised, see .nav li),
+   so neighbours' strokes don't clip it. */
 .nav__toggle.is-open {
   transform: translateX(calc(-46em / 52));
-  z-index: 1;
 }
 
 .nav__toggle-inner {
@@ -835,6 +877,20 @@ a {
     transform: translate(calc(-50% + 100vw), -50%);
   }
 
+  /* 10% smaller than desktop and sitting a little low, clear of the
+     stacked intro boxes. Moved by `top` rather than transform, so the
+     open/close transforms above still apply unchanged. */
+  .figure {
+    top: 56%;
+    height: 70.8vh;
+  }
+
+  /* "Local Time" on one row — a single 5-col column is too narrow for it.
+     The box still hugs its copy (.hl is fit-content). */
+  .clock {
+    grid-column: 1 / span 3;
+  }
+
   /* No sideways-shifted name to stay under, so the clock holds its spot. */
   .home.is-open .clock {
     transform: translateX(0);
@@ -849,6 +905,14 @@ a {
 
   .home.is-archive-open .intro {
     transform: translateY(-100vh);
+  }
+
+  /* The eye stands upright (90° clockwise; its iris stays centred — see
+     components/eye.tsx). Same bleed as desktop, axes swapped: its long axis
+     covers the screen's height, and its short axis 104% of the width. */
+  .eye {
+    width: max(100dvh, calc(104vw * 1728 / 936));
+    transform: translate(-50%, -50%) rotate(90deg);
   }
 }
 

@@ -33,6 +33,14 @@ const DOUBLE_BLINK_CHANCE = 0.2;
 // only drops the last stretch to the edge — like a real eye.
 const CLOSED_Y = 800;
 
+// A blackout asked of a shut eye (touch, keyboard) opens it first, and
+// starts once the lid is this far open.
+const OPEN_ENOUGH = 0.85;
+
+// Matches the CSS mobile breakpoint, where the eye is turned 90° clockwise
+// to stand upright (see .eye in globals.css) and its iris stays centred.
+const VERTICAL_QUERY = "(max-width: 700px)";
+
 // Blackout (Layer_2): the page-leave transition. Times in seconds, read off
 // the reference clip at 30fps.
 //  - A black disc grows out from behind the iris, accelerating, until it
@@ -69,11 +77,10 @@ const easeInOutCubic = (t: number) =>
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
 export type EyeHandle = {
-  /** Plays the blackout if the eye is open enough to see (or is already
-   *  black, or mid-restore — then it turns back round); resolves once the
-   *  screen is fully black, and holds it there. Returns null (and does
-   *  nothing) if the eye is closed. */
-  blackout: () => Promise<void> | null;
+  /** Plays the blackout (opening the eye first if it's shut; turning back
+   *  round if it's mid-restore); resolves once the screen is fully black,
+   *  and holds it there. */
+  blackout: () => Promise<void>;
   /** Plays a held (or still-running) blackout backwards — wedges reopen,
    *  the disc shrinks back into the iris — and resolves once the eye is
    *  back to normal. Returns null if there's no blackout to undo. */
@@ -110,7 +117,10 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
   const wedgeRefs = useRef<(SVGPathElement | null)[]>([]);
   const openRef = useRef(open);
   const kick = useRef<() => void>(() => {});
-  const api = useRef<EyeHandle>({ blackout: () => null, restore: () => null });
+  const api = useRef<EyeHandle>({
+    blackout: () => Promise.resolve(),
+    restore: () => null,
+  });
 
   useImperativeHandle(
     ref,
@@ -147,6 +157,12 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     let pending: { dir: number; resolve: () => void } | null = null;
     let fallback: ReturnType<typeof setTimeout>;
 
+    // A blackout asked of a shut eye holds it open (`forced`) and waits for
+    // the lid, then runs `opening` to start the blackout proper.
+    let forced = false;
+    let opening: (() => void) | null = null;
+    let openFallback: ReturnType<typeof setTimeout>;
+
     const drawBlackout = (e: number, irisT: string) => {
       discGroupRef.current?.setAttribute("transform", irisT);
       // Grow to the farthest viewBox corner from the iris — the svg box
@@ -173,6 +189,7 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     const settle = () => {
       if (dir < 0) {
         active = false;
+        forced = false;
         pos = 0;
         // Backed out with the iris centred; only now does it go back to
         // following the cursor (easing over, via the usual follow).
@@ -197,7 +214,7 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
       iris.x += (target.x - iris.x) * f;
       iris.y += (target.y - iris.y) * f;
       // Held open through the blackout, even if the pointer wanders off.
-      const wantOpen = openRef.current || active;
+      const wantOpen = openRef.current || active || forced;
       lid += ((wantOpen ? 1 : 0) - lid) * l;
       // Snap the last sliver shut — a sub-pixel slit still antialiases into
       // a visible hairline across the screen.
@@ -212,6 +229,13 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
           blink = 1 - (1 - (e - BLINK_CLOSE) / BLINK_OPEN) ** 2;
         else blinkStart = -1;
       }
+      if (opening && lid >= OPEN_ENOUGH) {
+        const go = opening;
+        opening = null;
+        clearTimeout(openFallback);
+        go();
+      }
+
       let shown = lid * blink;
       if (shown < 0.004) shown = 0;
 
@@ -248,8 +272,11 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
     kick.current = start;
 
     // Track the pointer even while closed, so the eye opens already looking
-    // at the cursor (i.e. at the nav tab that opened it).
+    // at the cursor (i.e. at the nav tab that opened it). Upright (mobile),
+    // the iris doesn't follow at all — it stays centred.
+    const vertical = window.matchMedia(VERTICAL_QUERY);
     const onMove = (e: PointerEvent) => {
+      if (vertical.matches) return;
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
       pointer.x = nx * MAX_DX;
@@ -259,7 +286,15 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
       target.y = pointer.y;
       if (openRef.current || lid > 0.001) start();
     };
+    // Crossing into the upright layout (e.g. resizing a desktop window
+    // narrow) recentres a gaze left over from the cursor.
+    const onVertical = () => {
+      if (!vertical.matches || active) return;
+      pointer.x = pointer.y = target.x = target.y = 0;
+      start();
+    };
     window.addEventListener("pointermove", onMove);
+    vertical.addEventListener("change", onVertical);
     start();
 
     // Only blinks an eye that's fully open — never mid-open or closing.
@@ -307,19 +342,41 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
       });
     };
 
-    // Only an eye that's mostly open can black out — otherwise the caller
-    // falls back to its plain version (the curtain, a background fade).
     api.current = {
       blackout: () => {
         if (active && dir > 0 && pos >= BLACKOUT_DUR) return Promise.resolve();
-        if (!active && lid < 0.5) return null;
-        return play(1);
+        if (active || lid >= 0.5) return play(1);
+        // Shut — no hover opened it (touch, keyboard). Open it, then black
+        // out, as if it had been hovered open. The timeout covers a paused
+        // rAF, as play's does.
+        forced = true;
+        blinkStart = -1;
+        clearTimeout(openFallback);
+        start();
+        return new Promise<void>((resolve) => {
+          const go = () => play(1).then(resolve);
+          opening = go;
+          openFallback = setTimeout(() => {
+            if (opening !== go) return;
+            opening = null;
+            lid = 1;
+            go();
+          }, 700);
+        });
       },
       // Backs out looking straight ahead. From full black the iris can just
       // be recentred (it's all black — nothing to see move); from part-way
-      // it eases there.
+      // it eases there. Caught still opening for one, it just closes again.
       restore: () => {
-        if (!active) return null;
+        if (!active) {
+          if (forced) {
+            forced = false;
+            opening = null;
+            clearTimeout(openFallback);
+            start();
+          }
+          return null;
+        }
         target.x = 0;
         target.y = 0;
         if (pos >= BLACKOUT_DUR) {
@@ -332,7 +389,9 @@ export default function Eye({ open, ref }: { open: boolean; ref?: Ref<EyeHandle>
 
     return () => {
       clearTimeout(fallback);
+      clearTimeout(openFallback);
       window.removeEventListener("pointermove", onMove);
+      vertical.removeEventListener("change", onVertical);
       cancelAnimationFrame(raf);
       clearTimeout(blinkTimer);
     };
