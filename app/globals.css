@@ -574,6 +574,48 @@ a {
   transition-duration: 0.55s;
 }
 
+/* A locked tab (lib/wip.ts): a plain button in the link's box, no roll. */
+.nav__wip {
+  appearance: none;
+  border: none;
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+/* Its "underway" note: a small label box to the tab's left (both 5px
+   strokes plus a 10px gap apart), drawing out of the tab leftwards on
+   hover, focus or a tap. */
+.nav__wip-note {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 20px);
+  transform: translateY(-50%);
+  font-size: var(--fs-body);
+  line-height: 1.17;
+  letter-spacing: var(--track);
+  white-space: nowrap;
+  color: #ffffff;
+  background: #000000;
+  box-shadow: 0 0 0 5px #000000;
+  clip-path: inset(-5px -5px -5px calc(100% + 5px));
+  transition: clip-path 0.35s var(--ease);
+  pointer-events: none;
+}
+
+.nav__wip.is-noted .nav__wip-note,
+.nav__wip:focus-visible .nav__wip-note {
+  clip-path: inset(-5px);
+}
+
+@media (hover: hover) {
+  .nav__wip:hover .nav__wip-note {
+    clip-path: inset(-5px);
+  }
+}
+
 /* --- Hover roll effect (nav items + cases) --- */
 .roll {
   display: inline-block;

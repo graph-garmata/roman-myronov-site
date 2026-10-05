@@ -18,6 +18,7 @@ import ArchiveList from "@/components/archive-list";
 import Eye, { type EyeHandle } from "@/components/eye";
 import { usePageCover } from "@/components/page-transition";
 import { visibleCases } from "@/lib/cases";
+import { isLocked } from "@/lib/wip";
 
 // Archive is no longer its own page — it opens as a right-side panel here.
 // (The /archive route is kept as a fallback for now.)
@@ -139,6 +140,37 @@ function Intro() {
         </span>
       ))}
     </h1>
+  );
+}
+
+// A nav tab for a page that's still being built (lib/wip.ts): the same box,
+// but no roll and no way in — hovering or focusing it shows a small note
+// beside it instead. Touch has no hover, so a tap shows the note for a moment.
+function WipTab({ label, delay }: { label: string; delay: number }) {
+  const [noted, setNoted] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
+  const tap = () => {
+    setNoted(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setNoted(false), 1600);
+  };
+  return (
+    <button
+      type="button"
+      aria-disabled
+      className={`nav__link nav__wip${noted ? " is-noted" : ""}`}
+      style={boxDelay(delay)}
+      onClick={tap}
+    >
+      <Reveal delay={delay + BOX_LEAD}>{label}</Reveal>
+      <span className="nav__wip-note">Page underway</span>
+    </button>
   );
 }
 
@@ -534,33 +566,41 @@ export default function Home() {
               </Link>
             </li>
             <li>
-              <button
-                type="button"
-                {...eyeHover}
-                className={`nav__toggle${archiveActive ? " is-open" : ""}`}
-                aria-expanded={archiveActive}
-                onClick={toggleArchive}
-                style={boxDelay(0.22)}
-              >
-                <span className="nav__toggle-inner">
-                  <Reveal delay={0.22 + BOX_LEAD}>
-                    <Roll>Archive</Roll>
-                  </Reveal>
-                  <span
-                    className={`nav__x${archiveActive ? " is-open" : ""}`}
-                    aria-hidden
-                  >
-                    <CloseIcon />
+              {isLocked("archive") ? (
+                <WipTab label="Archive" delay={0.22} />
+              ) : (
+                <button
+                  type="button"
+                  {...eyeHover}
+                  className={`nav__toggle${archiveActive ? " is-open" : ""}`}
+                  aria-expanded={archiveActive}
+                  onClick={toggleArchive}
+                  style={boxDelay(0.22)}
+                >
+                  <span className="nav__toggle-inner">
+                    <Reveal delay={0.22 + BOX_LEAD}>
+                      <Roll>Archive</Roll>
+                    </Reveal>
+                    <span
+                      className={`nav__x${archiveActive ? " is-open" : ""}`}
+                      aria-hidden
+                    >
+                      <CloseIcon />
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+              )}
             </li>
             <li>
-              <Link href="/dump" {...eyeHover} className="nav__link" style={boxDelay(0.28)}>
-                <Reveal delay={0.28 + BOX_LEAD}>
-                  <Roll>Dump</Roll>
-                </Reveal>
-              </Link>
+              {isLocked("dump") ? (
+                <WipTab label="Dump" delay={0.28} />
+              ) : (
+                <Link href="/dump" {...eyeHover} className="nav__link" style={boxDelay(0.28)}>
+                  <Reveal delay={0.28 + BOX_LEAD}>
+                    <Roll>Dump</Roll>
+                  </Reveal>
+                </Link>
+              )}
             </li>
             <li>
               <button
