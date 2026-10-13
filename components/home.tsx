@@ -493,7 +493,10 @@ export default function Home() {
           {visibleCases.map((c, i) => (
             <li
               key={c.slug}
-              style={{ transitionDelay: projectsOpen ? `${0.06 + i * 0.035}s` : "0s" }}
+              style={{
+                transitionDelay: projectsOpen ? `${0.06 + i * 0.035}s` : "0s",
+                zIndex: visibleCases.length - i,
+              }}
             >
               <Link
                 href={`/case/${c.slug}`}
@@ -517,7 +520,10 @@ export default function Home() {
           {contactLinks.map((link, i) => (
             <li
               key={link.label}
-              style={{ transitionDelay: contactOpen ? `${0.06 + i * 0.035}s` : "0s" }}
+              style={{
+                transitionDelay: contactOpen ? `${0.06 + i * 0.035}s` : "0s",
+                zIndex: contactLinks.length - i,
+              }}
             >
               <a
                 href={link.href}

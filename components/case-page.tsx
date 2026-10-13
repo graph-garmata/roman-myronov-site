@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Reveal from "@/components/reveal";
 import RevealLines from "@/components/reveal-lines";
+import ScrollRevealLines from "@/components/scroll-reveal-lines";
 import HomeButton, { CaseNav } from "@/components/home-button";
 import { getAdjacentCases } from "@/lib/cases";
 import type { CaseCell, CaseStudy, CaseVideo } from "@/lib/cases";
@@ -414,8 +415,12 @@ export default function CasePage({ study }: { study: CaseStudy }) {
             }
             return (
               <div className="case-block case-block--copy" key={i}>
-                <span className="case-block__label">{block.label}</span>
-                <p className="case-block__text">{block.text}</p>
+                <span className="case-block__label">
+                  <ScrollRevealLines text={block.label} />
+                </span>
+                <p className="case-block__text">
+                  <ScrollRevealLines text={block.text} baseDelay={0.05} step={0.04} />
+                </p>
               </div>
             );
           })}

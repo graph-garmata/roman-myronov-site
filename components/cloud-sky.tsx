@@ -233,8 +233,8 @@ export default function CloudSky({
   active: boolean;
   frontActive: boolean;
 }) {
-  const backRef = useRef<HTMLCanvasElement>(null);
-  const frontRef = useRef<HTMLCanvasElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
+  const frontRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(active);
   const wakeRef = useRef<(() => void) | null>(null);
   // No WebGL (or it was lost): show the still frame instead.
@@ -246,9 +246,20 @@ export default function CloudSky({
   }, [active]);
 
   useEffect(() => {
-    const backCanvas = backRef.current;
-    const frontCanvas = frontRef.current;
-    if (!backCanvas || !frontCanvas) return;
+    const backWrap = backRef.current;
+    const frontWrap = frontRef.current;
+    if (!backWrap || !frontWrap) return;
+
+    // Fresh canvases for every run of this effect: cleanup loses the old
+    // contexts to free them, and a canvas hands back its lost context for
+    // good — so a remount (or Strict Mode's rerun) reusing one would be stuck
+    // on the still frame.
+    const backCanvas = document.createElement("canvas");
+    const frontCanvas = document.createElement("canvas");
+    backCanvas.className = "sky__clouds";
+    frontCanvas.className = "sky-front__clouds";
+    backWrap.appendChild(backCanvas);
+    frontWrap.appendChild(frontCanvas);
 
     let back: ReturnType<typeof createLayer>;
     let front: ReturnType<typeof createLayer>;
@@ -256,6 +267,8 @@ export default function CloudSky({
       back = createLayer(backCanvas, BACK_FRAG, false);
       front = createLayer(frontCanvas, FRONT_FRAG, true);
     } catch {
+      backCanvas.remove();
+      frontCanvas.remove();
       setStill(true);
       return;
     }
@@ -349,6 +362,7 @@ export default function CloudSky({
       layers.forEach((l) => {
         l.canvas.removeEventListener("webglcontextlost", onLost);
         l.dispose();
+        l.canvas.remove();
       });
       sources.forEach((s) => "close" in s && s.close());
     };
@@ -359,14 +373,15 @@ export default function CloudSky({
       <div
         className={`sky${active ? "" : " is-hidden"}${still ? " is-still" : ""}`}
         aria-hidden
-      >
-        <canvas ref={backRef} className="sky__clouds" />
-      </div>
+        ref={backRef}
+      />
       {/* Wrapped like the sky's canvas: Safari sizes a bare absolutely
           positioned canvas short of the screen's bottom edge. */}
-      <div className={`sky-front${frontActive && !still ? "" : " is-hidden"}`} aria-hidden>
-        <canvas ref={frontRef} className="sky-front__clouds" />
-      </div>
+      <div
+        className={`sky-front${frontActive && !still ? "" : " is-hidden"}`}
+        aria-hidden
+        ref={frontRef}
+      />
     </>
   );
 }

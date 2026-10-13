@@ -344,6 +344,14 @@ a {
    col 1, so clearing their own width + the margin hides them; the contact
    links sit at col 3, so they must also clear the two columns in front
    (--shift-2col) to reach the same off-screen edge. */
+/* Each line stacks over the one below it (z-index set inline, counting
+   down): the boxes overlap by their 5px strokes, and the upper word's
+   descenders (Instagram's g, Specialty's p and y) hang into that overlap. */
+.cases li,
+.contact-links li {
+  position: relative;
+}
+
 .cases li {
   transform: translateX(calc(-100% - var(--margin)));
   transition: transform 0.65s var(--ease);
@@ -382,6 +390,19 @@ a {
 .cases__item-inner {
   display: inline-flex;
   align-items: center;
+}
+
+/* The roll's mask runs a hair below the line so descenders aren't trimmed,
+   and its two copies sit that far apart so the hidden one's descenders stay
+   out of view. (Unlike overflow, clip-path can open just the bottom.) */
+.cases__item .roll {
+  overflow: visible;
+  clip-path: inset(0 0 -0.05em 0);
+}
+
+.cases__item .roll__inner {
+  gap: 0.05em;
+  transform: translateY(-1.05em);
 }
 
 /* Redirect-link arrow: hidden (0-width) until hover, then draws in and
@@ -950,11 +971,13 @@ a {
 }
 
 /* Both lines are label boxes like the rest of the home screen (.hl): one
-   line tall, so the 5px outside stroke sits evenly around the copy. The gap
-   keeps the two boxes' strokes from touching. */
+   line tall, so the 5px outside stroke sits evenly around the copy. Stacked
+   flush like .nav li — the strokes overlap into one block, with the label on
+   top so the email's stroke never covers its descenders. */
 .contact-cta__label {
+  z-index: 1;
   height: 1em;
-  margin: 0 0 15px;
+  margin: 0;
   font-size: var(--fs-heading);
   font-weight: 400;
   line-height: 1;
@@ -1502,10 +1525,17 @@ a {
   right: var(--margin);
 }
 
-/* Next's arrow sits after the label, so its reveal grows/pushes leftward. */
+/* Next's arrow sits after the label, so its reveal grows leftward. The icon
+   is pinned to the box's right edge (the screen edge), mirroring Previous:
+   the arrow holds still and draws while "Next" slides away from it, rather
+   than riding along with the box's moving left edge and shoving the word. */
 .case-home--next .case-home__arrow {
+  justify-content: flex-end;
   margin-right: 0;
   margin-left: 0;
+  /* Its gap is on the left, so that's the margin to ease (the base rule
+     only eases margin-right — without this the word jumps the gap at once). */
+  transition: max-width 0.4s var(--ease), margin-left 0.4s var(--ease);
 }
 
 .case-home--next:hover .case-home__arrow {
@@ -1637,6 +1667,12 @@ a {
   .case-block__label {
     text-align: left;
   }
+
+  /* Two-up rows: at phone width the desktop 18px gap reads as a split;
+     5px keeps the pair one image. */
+  .case-block--grid {
+    gap: 5px;
+  }
 }
 
 /* ============================================================
@@ -1675,7 +1711,8 @@ a {
   vertical-align: text-top;
 }
 
-/* Footnote hover preview: scale-reveals a portrait image, anchored top-left. */
+/* Footnote hover preview: scale-reveals a portrait image, its top-left
+   corner pinned on the mark (placed by components/footnote-image). */
 .about-footnote {
   position: relative;
   cursor: default;
