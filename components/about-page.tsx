@@ -8,7 +8,7 @@ import Roll from "@/components/roll";
 const bio: { q: string; a: string }[] = [
   {
     q: "Who?",
-    a: "Designer and art director, founded in 1997, started my ninja way in 2018. Since then I've made a lot of different design works, including coins and art objects, but my main expertise lies in the field of branding, web design, and motion graphics.",
+    a: "Designer and art director, founded in 1997, started my ninja way in 2018. I work mostly on branding, identities, creative web design, and posters, focusing on typography, bold graphics, and occasionally non-obvious ideas.",
   },
   {
     q: "Where?",
@@ -16,11 +16,11 @@ const bio: { q: string; a: string }[] = [
   },
   {
     q: "Now?",
-    a: "I also co-run Denormalized{4}, a strategy-first branding and digital design studio, where we help businesses build integrated solutions from brand to final product.",
+    a: "I co-run Denormalized{4}, a strategy-first studio that builds brands and digital products for companies whose brand hasn’t caught up with where they’re going. I also teach graphic and poster design.",
   },
   {
     q: "Next?",
-    a: "Always open to interesting collaborations, and currently open to art/creative director roles where I can work at that level day to day, alongside the small amount of studio and teaching work I've built over the years.",
+    a: "Now seeking interesting collaborations with agencies and studios, or a senior design or art direction role with a team doing ambitious brand work.",
   },
 ];
 
