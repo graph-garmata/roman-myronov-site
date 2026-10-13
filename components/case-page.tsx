@@ -25,6 +25,13 @@ const VIMEO_MOUNT_MARGIN = "1200px 0px 1200px 0px";
 // self-hosted <video> and Vimeo alike.
 const PLAY_MARGIN = "0px";
 
+// A self-hosted film only holds its sources (and so its buffers and
+// decoder) while it's within this band; past it they're dropped and the
+// poster stands in. Without that every film you've scrolled past stays
+// resident, and on a phone a case's worth of 1920px films is enough for iOS
+// to kill the tab ("a problem repeatedly occurred").
+const VIDEO_LOAD_MARGIN = "1000px 0px 1000px 0px";
+
 // How long a mounted embed survives after leaving the mount band, so a scroll
 // that overshoots and comes straight back doesn't have to refetch it.
 const RECLAIM_MS = 5000;
@@ -88,18 +95,32 @@ function useMagnetic(ref: React.RefObject<HTMLElement | null>) {
 
 /** Plays a <video> only while it's actually in the viewport; pauses it
  * otherwise — so having many videos on a page doesn't mean many simultaneous
- * decodes. The poster holds the frame until it starts. */
+ * decodes. Its sources are attached only near the viewport (see
+ * VIDEO_LOAD_MARGIN) and released again once it's well away. The poster
+ * holds the frame until it starts. */
 function VideoCell({ video }: { video: CaseVideo }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const inView = useRef(false);
   const soundRef = useRef<HTMLButtonElement>(null);
   useMagnetic(soundRef);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
+    let reclaim = 0;
+    const loadIo = new IntersectionObserver(
       ([entry]) => {
+        window.clearTimeout(reclaim);
+        if (entry.isIntersecting) setLoaded(true);
+        else reclaim = window.setTimeout(() => setLoaded(false), RECLAIM_MS);
+      },
+      { rootMargin: VIDEO_LOAD_MARGIN }
+    );
+    const playIo = new IntersectionObserver(
+      ([entry]) => {
+        inView.current = entry.isIntersecting;
         if (entry.isIntersecting) el.play().catch(() => {});
         else {
           el.pause();
@@ -110,9 +131,23 @@ function VideoCell({ video }: { video: CaseVideo }) {
       },
       { rootMargin: PLAY_MARGIN }
     );
-    io.observe(el);
-    return () => io.disconnect();
+    loadIo.observe(el);
+    playIo.observe(el);
+    return () => {
+      window.clearTimeout(reclaim);
+      loadIo.disconnect();
+      playIo.disconnect();
+    };
   }, []);
+
+  // A <video> doesn't notice <source>s coming or going on its own: load()
+  // picks up the new ones, or — with none left — frees what it was holding.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.load();
+    if (loaded && inView.current) el.play().catch(() => {});
+  }, [loaded]);
 
   return (
     <>
@@ -128,8 +163,11 @@ function VideoCell({ video }: { video: CaseVideo }) {
         preload="metadata"
         aria-label={video.alt ?? ""}
       >
-        <source src={video.webm} type="video/webm" />
-        <source src={video.mp4} type="video/mp4" />
+        {/* MP4 first: Safari also takes WebM now, but its H.264 path is
+            the hardware-decoded one — VP9 can fall back to software on
+            iPhones, which stalls and eats memory. */}
+        {loaded && <source src={video.mp4} type="video/mp4" />}
+        {loaded && <source src={video.webm} type="video/webm" />}
       </video>
       {video.sound && (
         <button
