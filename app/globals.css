@@ -313,6 +313,9 @@ a {
 .cases,
 .contact-links {
   grid-row: 1;
+  /* One layer for the whole list, so every line's box (.cases__item::before,
+     z -1) paints beneath every line's word — see .cases__item. */
+  isolation: isolate;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -344,16 +347,6 @@ a {
    col 1, so clearing their own width + the margin hides them; the contact
    links sit at col 3, so they must also clear the two columns in front
    (--shift-2col) to reach the same off-screen edge. */
-/* Each line stacks over the one below it (--stack set inline, counting
-   down): the boxes overlap by their 5px strokes, and the upper word's
-   descenders (Instagram's g, Specialty's p and y) hang into that overlap.
-   Not on mobile — see there. */
-.cases li,
-.contact-links li {
-  position: relative;
-  z-index: var(--stack);
-}
-
 .cases li {
   transform: translateX(calc(-100% - var(--margin)));
   transition: transform 0.65s var(--ease);
@@ -364,21 +357,27 @@ a {
   transition: transform 0.65s var(--ease);
 }
 
+/* Settled at `none`, not translateX(0): any transform makes the line its
+   own layer, which would draw its box over the line above's word again. */
 .home.is-open .cases li {
-  transform: translateX(0);
+  transform: none;
 }
 
 .home.is-contact-open .contact-links li {
-  transform: translateX(0);
+  transform: none;
 }
 
+/* The black box (with its 5px outside stroke) is a pseudo-element under the
+   list's shared layer rather than the item's own background: the boxes
+   overlap by their strokes, and drawn with the word they'd cover the line
+   above's descenders (Instagram's g) or, at the 32px mobile size, the line
+   below's capitals. Underneath every word, neither is cut. */
 .cases__item {
   appearance: none;
+  position: relative;
   display: inline-block;
   vertical-align: top;
   height: 1em;
-  background: #000000;
-  box-shadow: 0 0 0 5px #000000;
   border: none;
   padding: 0;
   margin: 0;
@@ -387,6 +386,15 @@ a {
   letter-spacing: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.cases__item::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  background: #000000;
+  pointer-events: none;
 }
 
 .cases__item-inner {
@@ -1046,14 +1054,6 @@ a {
 
   .contact-links li {
     transform: translateX(calc(-100% - var(--margin)));
-  }
-
-  /* At the 32px size, capitals start only ~3.7px below their line, inside
-     the 5px stroke of the box above — so here each line stacks over the
-     one above it instead (plain document order), keeping the caps whole. */
-  .cases li,
-  .contact-links li {
-    z-index: auto;
   }
 
   .home.is-open .intro {
@@ -1725,11 +1725,18 @@ a {
   vertical-align: text-top;
 }
 
-/* Footnote hover preview: scale-reveals a portrait image, its top-left
-   corner pinned on the mark (placed by components/footnote-image). */
+/* Footnote hover preview: scale-reveals a portrait image, a top corner
+   pinned on the mark and growing toward the roomier side (placed, and its
+   transform-origin set, by components/footnote-image). */
 .about-footnote {
   position: relative;
   cursor: default;
+}
+
+.about-footnote--link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .about-footnote__image {

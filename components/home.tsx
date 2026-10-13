@@ -495,8 +495,7 @@ export default function Home() {
               key={c.slug}
               style={{
                 transitionDelay: projectsOpen ? `${0.06 + i * 0.035}s` : "0s",
-                "--stack": visibleCases.length - i,
-              } as React.CSSProperties}
+              }}
             >
               <Link
                 href={`/case/${c.slug}`}
@@ -522,8 +521,7 @@ export default function Home() {
               key={link.label}
               style={{
                 transitionDelay: contactOpen ? `${0.06 + i * 0.035}s` : "0s",
-                "--stack": contactLinks.length - i,
-              } as React.CSSProperties}
+              }}
             >
               <a
                 href={link.href}

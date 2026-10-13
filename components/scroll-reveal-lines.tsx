@@ -10,7 +10,12 @@ const MARK_RE = /^(.*?)(\{\d+\})(.*)$/;
 // Footnotes that reveal a preview on hover.
 const FOOTNOTE_IMAGES: Record<string, FootnoteMedia> = {
   "1": { src: "/images/about-roman.png", ratio: 280 / 380 },
-  "4": { src: "/images/footnote-denormalized.mp4", ratio: 560 / 448 },
+  "4": {
+    src: "/images/footnote-denormalized.mp4",
+    ratio: 560 / 448,
+    href: "https://denormalized.co",
+  },
+  "6": { src: "/images/footnote-prjctr.webp", ratio: 560 / 594, href: "https://prjctr.com" },
 };
 
 // `plain`: the measuring copy — same type, no hover preview.
