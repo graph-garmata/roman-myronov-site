@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-// The image's size (kept in step with .about-footnote__image), and its
+// The image's width (kept in step with .about-footnote__image), and its
 // minimum distance from the screen's right edge.
 const IMAGE_W = 280;
-const IMAGE_H = 380;
 const EDGE = 8;
+
+/** A footnote's preview: a still, or a looping film (.mp4), with its shape
+ *  as width / height. */
+export type FootnoteMedia = { src: string; ratio: number };
 
 /**
  * FootnoteImage — wraps a footnote mark; hovering it (or tapping it, on
@@ -18,15 +21,18 @@ const EDGE = 8;
  * escapes the reveal-lines masks (which clip overflow) that would otherwise
  * crop it. Any scroll puts it away — it's fixed to the screen, so it would
  * otherwise come loose from the mark (and on touch nothing else hides it).
+ * A film plays only while shown, from its first frame each time.
  */
 export default function FootnoteImage({
   children,
-  src,
+  media,
 }: {
   children: React.ReactNode;
-  src: string;
+  media: FootnoteMedia;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isVideo = media.src.endsWith(".mp4");
   // Position is only ever set on show, and deliberately left in place on
   // hide — resetting it would snap the (still-visible, mid-transition-out)
   // image to the (0,0) CSS default, which reads as an unwanted jump to the
@@ -49,6 +55,19 @@ export default function FootnoteImage({
     setShown(true);
   };
   const hide = () => setShown(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (shown) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      // Held through the scale-out, then parked.
+      const t = window.setTimeout(() => video.pause(), 500);
+      return () => window.clearTimeout(t);
+    }
+  }, [shown]);
 
   useEffect(() => {
     if (!shown) return;
@@ -80,21 +99,32 @@ export default function FootnoteImage({
         // animation instead of scaling in.
         createPortal(
           <span
-            className={`about-footnote__image${shown ? " is-shown" : ""}`}
+            className={`about-footnote__image${isVideo ? " about-footnote__image--film" : ""}${shown ? " is-shown" : ""}`}
             style={
               pos
                 ? {
                     top: pos.top,
                     left: pos.left,
                     width: pos.width,
-                    height: (pos.width * IMAGE_H) / IMAGE_W,
+                    height: pos.width / media.ratio,
                   }
                 : undefined
             }
             aria-hidden
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="" />
+            {isVideo ? (
+              <video
+                ref={videoRef}
+                src={media.src}
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={media.src} alt="" />
+            )}
           </span>,
           document.body
         )}

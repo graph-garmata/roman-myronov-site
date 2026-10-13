@@ -124,7 +124,9 @@ export default function AboutPage() {
         {/* ---- Contact ---- */}
         <section className="about-contact">
           <h2 className="about-h">
-            <ScrollRevealLines text="Any inquiries?" />
+            {/* Last on the page: it may sit too low to pass the usual
+                reveal line, so it reveals on entering view. */}
+            <ScrollRevealLines text="Any inquiries?" triggerMargin="0px" />
           </h2>
           <a className="email-link" href="mailto:roman@denormalized.co">
             <Roll chars>roman@denormalized.co</Roll>

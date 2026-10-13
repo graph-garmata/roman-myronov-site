@@ -1,28 +1,30 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import FootnoteImage from "@/components/footnote-image";
+import FootnoteImage, { type FootnoteMedia } from "@/components/footnote-image";
 
 // Matches a word carrying an inline footnote marker, e.g. "studios{2},"
 // -> prefix "studios", mark "{2}", suffix ",".
 const MARK_RE = /^(.*?)(\{\d+\})(.*)$/;
 
-// Footnotes that reveal a preview image on hover.
-const FOOTNOTE_IMAGES: Record<string, string> = {
-  "1": "/images/about-roman.png",
+// Footnotes that reveal a preview on hover.
+const FOOTNOTE_IMAGES: Record<string, FootnoteMedia> = {
+  "1": { src: "/images/about-roman.png", ratio: 280 / 380 },
+  "4": { src: "/images/footnote-denormalized.mp4", ratio: 560 / 448 },
 };
 
-function Word({ word }: { word: string }) {
+// `plain`: the measuring copy — same type, no hover preview.
+function Word({ word, plain = false }: { word: string; plain?: boolean }) {
   const m = word.match(MARK_RE);
   if (!m) return <>{word}</>;
   const [, pre, mark, post] = m;
   const n = mark.slice(1, -1);
   const markEl = <span className="about-serif">{mark}</span>;
-  const image = FOOTNOTE_IMAGES[n];
+  const image = plain ? undefined : FOOTNOTE_IMAGES[n];
   return (
     <>
       {pre}
-      {image ? <FootnoteImage src={image}>{markEl}</FootnoteImage> : markEl}
+      {image ? <FootnoteImage media={image}>{markEl}</FootnoteImage> : markEl}
       {post}
     </>
   );
@@ -40,11 +42,15 @@ export default function ScrollRevealLines({
   className = "",
   baseDelay = 0,
   step = 0.05,
+  triggerMargin = "-12%",
 }: {
   text: string;
   className?: string;
   baseDelay?: number;
   step?: number;
+  /** How far above the screen's bottom edge the text must rise to reveal.
+   *  Text near the page's end may never get that high — pass "0px". */
+  triggerMargin?: string;
 }) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -101,11 +107,11 @@ export default function ScrollRevealLines({
           io.disconnect();
         }
       },
-      { rootMargin: "0px 0px -12% 0px" }
+      { rootMargin: `0px 0px ${triggerMargin} 0px` }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [triggerMargin]);
 
   return (
     <span
@@ -114,8 +120,13 @@ export default function ScrollRevealLines({
     >
       <span className="reveal-lines__measure" aria-hidden ref={measureRef}>
         {words.map((w, i) => (
+          // Set exactly as the shown text is (small footnote marks
+          // included), and unbreakable within a word (no wrapping at
+          // hyphens), so rows break where they will when shown.
           <span data-w key={i}>
-            {w}{" "}
+            <span className="reveal-lines__word">
+              <Word word={w} plain />
+            </span>{" "}
           </span>
         ))}
       </span>

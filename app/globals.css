@@ -344,12 +344,14 @@ a {
    col 1, so clearing their own width + the margin hides them; the contact
    links sit at col 3, so they must also clear the two columns in front
    (--shift-2col) to reach the same off-screen edge. */
-/* Each line stacks over the one below it (z-index set inline, counting
+/* Each line stacks over the one below it (--stack set inline, counting
    down): the boxes overlap by their 5px strokes, and the upper word's
-   descenders (Instagram's g, Specialty's p and y) hang into that overlap. */
+   descenders (Instagram's g, Specialty's p and y) hang into that overlap.
+   Not on mobile — see there. */
 .cases li,
 .contact-links li {
   position: relative;
+  z-index: var(--stack);
 }
 
 .cases li {
@@ -703,6 +705,10 @@ a {
   display: inline;
 }
 
+.reveal-lines__word {
+  white-space: nowrap;
+}
+
 /* --- Reveal effect (on-load intro; text slides up out of a mask) --- */
 .reveal {
   display: block;
@@ -1040,6 +1046,14 @@ a {
 
   .contact-links li {
     transform: translateX(calc(-100% - var(--margin)));
+  }
+
+  /* At the 32px size, capitals start only ~3.7px below their line, inside
+     the 5px stroke of the box above — so here each line stacks over the
+     one above it instead (plain document order), keeping the caps whole. */
+  .cases li,
+  .contact-links li {
+    z-index: auto;
   }
 
   .home.is-open .intro {
@@ -1736,7 +1750,15 @@ a {
   transform: scale(1);
 }
 
-.about-footnote__image img {
+/* A film is black figures on white (video has no alpha), standing in for
+   a transparent original: multiplied onto the page, the white drops out
+   and only the figures remain. */
+.about-footnote__image--film {
+  mix-blend-mode: multiply;
+}
+
+.about-footnote__image img,
+.about-footnote__image video {
   display: block;
   width: 100%;
   height: 100%;
@@ -1894,12 +1916,9 @@ a {
     --fs-heading: 32px;
   }
 
-  /* Bottom padding lets the last heading scroll past the reveal line
-     (scroll-reveal-lines' -12% margin) above the one-line email. */
   .about__inner {
     gap: 152px;
     padding-top: 100px;
-    padding-bottom: 100px;
   }
 
   .about-section__title {

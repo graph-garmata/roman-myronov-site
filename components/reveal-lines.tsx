@@ -60,8 +60,9 @@ export default function RevealLines({
     <span className="reveal-lines">
       <span className="reveal-lines__measure" aria-hidden ref={measureRef}>
         {words.map((w, i) => (
+          // Unbreakable within a word (no wrapping at hyphens), as shown.
           <span data-w key={i}>
-            {w}{" "}
+            <span className="reveal-lines__word">{w}</span>{" "}
           </span>
         ))}
       </span>
