@@ -316,7 +316,7 @@ export default function ArchiveList({
                 onMouseMove={(e) => movePreview(e.clientX, e.clientY)}
                 onMouseLeave={hidePreview}
               >
-                <Roll>{item.name}</Roll>
+                <Roll chars>{item.name}</Roll>
               </p>
             ))}
           </div>

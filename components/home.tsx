@@ -16,6 +16,7 @@ import Reveal from "@/components/reveal";
 import { ArrowIcon } from "@/components/home-button";
 import ArchiveList from "@/components/archive-list";
 import Eye, { type EyeHandle } from "@/components/eye";
+import CloudSky from "@/components/cloud-sky";
 import { usePageCover } from "@/components/page-transition";
 import { visibleCases } from "@/lib/cases";
 import { isLocked } from "@/lib/wip";
@@ -40,6 +41,7 @@ const contactLinks: {
   { label: "LinkedIn", href: "https://www.linkedin.com/in/roman-myronov/" },
   { label: "CV", href: "/cv.pdf", download: true, direction: "down" },
   { label: "Behance", href: "https://www.behance.net/graph_garmata" },
+  { label: "Instagram", href: "https://www.instagram.com/graph_garmata/" },
   { label: "Denormalized", href: "https://denormalized.co" },
 ];
 
@@ -466,6 +468,15 @@ export default function Home() {
       ref={homeRef}
       className={`home${projectsOpen ? " is-open" : ""}${archiveOpen ? " is-archive-open" : ""}${contactOpen ? " is-contact-open" : ""}${loaded ? " is-loaded" : ""}${leaving ? " is-leaving" : ""}`}
     >
+      {/* ---- Sky: drifting clouds behind everything, plus a few front
+          clouds passing between the figure and the labels. Archive and
+          Contact take over on their own grounds, so it fades out for them;
+          the front clouds also clear out for the eye's blackout ---- */}
+      <CloudSky
+        active={!archiveOpen && !contactOpen}
+        frontActive={!archiveActive && !contactOpen && !leaving}
+      />
+
       <div className="home__inner">
         <Intro />
 
@@ -683,18 +694,18 @@ export default function Home() {
         />
 
         <div className="contact-cta" aria-hidden={!contactOpen}>
-          <p className="contact-cta__label">
+          <p className="contact-cta__label hl">
             <Reveal key={`label-${contactRevealKey}`} delay={0.1}>
               Any inquiries?
             </Reveal>
           </p>
           <a
-            className="email-link"
+            className="contact-cta__email hl"
             href="mailto:roman@denormalized.co"
             tabIndex={contactOpen ? 0 : -1}
           >
             <Reveal key={`email-${contactRevealKey}`} delay={0.18}>
-              <Roll>roman@denormalized.co</Roll>
+              <Roll chars>roman@denormalized.co</Roll>
             </Reveal>
           </a>
         </div>

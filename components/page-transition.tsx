@@ -10,6 +10,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import WordTransition from "@/components/word-transition";
+import { caseOrder } from "@/lib/cases";
 
 // "custom": a page's own cover animation is playing (see usePageCover).
 // "covered": it finished — the curtain snaps in fully closed, unseen behind
@@ -18,14 +19,24 @@ import WordTransition from "@/components/word-transition";
 // cover) the page's name plays instead of the curtain's reveal.
 type Phase = "idle" | "covering" | "custom" | "covered" | "word" | "revealing";
 
-// Standalone pages that arrive through their name (components/word-transition)
-// rather than the curtain. `color` is the page's own background, which the
+// Pages that arrive through their name (components/word-transition) rather
+// than the curtain. `color` is the page's own background, which the
 // transition ends on so lifting it reveals the page seamlessly.
 type WordPage = { label: string; color: string };
 const WORD_PAGES: Record<string, WordPage> = {
   "/about": { label: "About", color: "#ffffff" },
   "/dump": { label: "Dump", color: "#000000" },
 };
+
+// Case studies arrive through the case's own name, on the case page's black
+// ground (.case). Names come from caseOrder, so new cases get it for free.
+const CASE_COLOR = "#000000";
+function wordPageFor(pathname: string): WordPage | null {
+  if (WORD_PAGES[pathname]) return WORD_PAGES[pathname];
+  const slug = pathname.match(/^\/case\/([^/]+)\/?$/)?.[1];
+  const c = slug ? caseOrder.find((x) => x.slug === slug) : undefined;
+  return c ? { label: c.name, color: CASE_COLOR } : null;
+}
 
 /** A page's own cover: start it and return a promise that resolves once the
  *  screen is fully black, or return null to fall back to the curtain. */
@@ -79,7 +90,7 @@ export default function PageTransitionProvider({
     (href: string, isLight = false) => {
       if (phase !== "idle") return;
       pendingHref.current = href;
-      setWord(WORD_PAGES[new URL(href, window.location.href).pathname] ?? null);
+      setWord(wordPageFor(new URL(href, window.location.href).pathname));
       setLight(isLight);
       setPhase("covering");
     },
@@ -187,7 +198,7 @@ export default function PageTransitionProvider({
       if (phaseRef.current !== "idle") return;
       const custom = coverRef.current?.(href);
       if (custom) {
-        const wordPage = WORD_PAGES[url.pathname] ?? null;
+        const wordPage = wordPageFor(url.pathname);
         pendingHref.current = href;
         setWord(wordPage);
         setLight(false);

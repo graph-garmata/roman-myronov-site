@@ -194,9 +194,8 @@ a {
   background: #000000;
 }
 
-/* Contact takes over in light mode. */
+/* Contact takes over on the plain grey ground — the sky fades out for it. */
 .home.is-contact-open {
-  background: #ffffff;
   color: #000000;
 }
 
@@ -206,7 +205,7 @@ a {
    Contact takeover's clock/colophon and cta land — see components/home.tsx). */
 .home__inner {
   position: relative;
-  z-index: 2;
+  z-index: 3; /* above the front clouds (.sky-front, 2) and the figure (1) */
   height: 100%;
   display: grid;
   grid-template-columns: repeat(var(--columns), 1fr);
@@ -638,6 +637,24 @@ a {
   line-height: 1;
 }
 
+/* Per-character roll (<Roll chars>): the outer .roll still masks, each
+   character is its own two-line column, and the columns set off one after
+   another. No will-change here — the Archive list would promote hundreds
+   of tiny layers. */
+.roll__chars {
+  display: flex;
+  align-items: flex-start;
+}
+
+.roll--chars .roll__inner {
+  transition-delay: calc(var(--i) * 0.015s);
+  will-change: auto;
+}
+
+.roll--chars .roll__line {
+  white-space: pre;
+}
+
 .nav__link:hover .roll__inner,
 .nav__toggle:hover .roll__inner,
 .cases__item:hover .roll__inner,
@@ -742,6 +759,72 @@ a {
   opacity: 1;
 }
 
+
+/* --- Sky (components/cloud-sky.tsx) — the plain gradient, fitted like the
+   canvas above it (cover, then zoomed by SKY_ZOOM = 1.15) so the canvas
+   fades in over it without a jump. 2.5154 is the PSD's aspect. The grey
+   underneath shows for the moment before the gradient loads. --- */
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #6e6e6e url("/images/sky/sky.webp") center / auto
+    max(115%, calc(100vw / 2.5154 * 1.15)) no-repeat;
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease);
+}
+
+.home .sky.is-hidden {
+  opacity: 0;
+}
+
+.sky__clouds {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+}
+
+.sky__clouds.is-ready {
+  opacity: 1;
+}
+
+/* The front clouds: in front of the figure (1), behind the labels (3). */
+.sky-front {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease);
+}
+
+/* Out of the way for Archive, Contact and the eye's blackout. */
+.sky-front.is-hidden {
+  opacity: 0;
+  transition-duration: 0.3s;
+}
+
+.sky-front__clouds {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+}
+
+.sky-front__clouds.is-ready {
+  opacity: 1;
+}
+
+/* No WebGL: a still frame of the same composite (clouds, grain). */
+.sky.is-still {
+  background-image: url("/images/sky/sky-still.webp");
+}
+
+.sky.is-still .sky__clouds {
+  display: none;
+}
 
 /* --- Centered figure --- */
 .figure {
@@ -866,12 +949,39 @@ a {
   pointer-events: auto;
 }
 
+/* Both lines are label boxes like the rest of the home screen (.hl): one
+   line tall, so the 5px outside stroke sits evenly around the copy. The gap
+   keeps the two boxes' strokes from touching. */
 .contact-cta__label {
-  margin: 0;
+  height: 1em;
+  margin: 0 0 15px;
   font-size: var(--fs-heading);
   font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  line-height: 1;
+  letter-spacing: var(--track);
+}
+
+/* The @ dips below the 1em line, so the email's box (and its roll lines)
+   run a little taller to hold it — otherwise the roll clips its foot and
+   the hidden line's @ peeks in at the top. The right padding gives back
+   the last letter's negative tracking so the "o" doesn't overhang the box. */
+.contact-cta__email {
+  height: 1.1em;
+  padding-right: 0.04em;
+  font-size: clamp(3.25rem, 9vw, 156px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.contact-cta__email .roll,
+.contact-cta__email .roll__line {
+  height: 1.1em;
+}
+
+.contact-cta__email:hover .roll__inner {
+  transform: translateY(0);
 }
 
 /* ============================================================
@@ -925,6 +1035,12 @@ a {
   .figure {
     top: 56%;
     height: 70.8vh;
+  }
+
+  /* The email stays one box on one line: sized so its ~10em run fills the
+     width between the margins. */
+  .contact-cta__email {
+    font-size: calc((100vw - 2 * var(--margin)) / 10.1);
   }
 
   /* "Local Time" on one row — a single 5-col column is too narrow for it.
@@ -1741,9 +1857,12 @@ a {
     --fs-heading: 32px;
   }
 
+  /* Bottom padding lets the last heading scroll past the reveal line
+     (scroll-reveal-lines' -12% margin) above the one-line email. */
   .about__inner {
     gap: 152px;
     padding-top: 100px;
+    padding-bottom: 100px;
   }
 
   .about-section__title {
@@ -1777,8 +1896,16 @@ a {
     padding: 6px 0;
   }
 
+  /* The email drops to the heading's size and sits right under it, the two
+     reading as one block. */
   .about-contact {
-    gap: 12px;
+    gap: 0;
+  }
+
+  .email-link {
+    font-size: var(--fs-heading);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
   }
 
   /* The hover flip is meaningless on touch, and the email now wraps across
@@ -1794,8 +1921,14 @@ a {
     transform: none;
   }
 
+  /* Per-character: the character columns wrap like the word would. */
+  .email-link .roll__chars {
+    flex-wrap: wrap;
+  }
+
   .email-link .roll__line:first-child {
     height: auto;
+    line-height: inherit;
   }
 
   .email-link .roll__line:last-child {

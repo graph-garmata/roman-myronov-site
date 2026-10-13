@@ -127,7 +127,7 @@ export default function AboutPage() {
             <ScrollRevealLines text="Any inquiries?" />
           </h2>
           <a className="email-link" href="mailto:roman@denormalized.co">
-            <Roll>roman@denormalized.co</Roll>
+            <Roll chars>roman@denormalized.co</Roll>
           </a>
         </section>
       </main>
