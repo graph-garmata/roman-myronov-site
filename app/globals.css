@@ -1772,6 +1772,28 @@ a {
   object-fit: cover;
 }
 
+/* A film over its poster: hidden until it has a frame of its own. */
+.about-footnote__image--film video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.about-footnote__image--film video.is-ready {
+  opacity: 1;
+}
+
+/* Switching stills: stacked, only the current one shown. */
+.about-footnote__image--switch img {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.about-footnote__image--switch img.is-on {
+  visibility: visible;
+}
+
 .about-label {
   margin: 0;
   padding-left: 52px;
@@ -1891,6 +1913,13 @@ a {
   /* No spaces to break at, so narrow (mobile) widths need an explicit
      permission to wrap mid-word instead of overflowing. */
   overflow-wrap: break-word;
+}
+
+/* Same as .contact-cta__email: taller roll lines so the @'s foot isn't
+   clipped and the hidden line's @ doesn't peek in at the top. */
+.email-link .roll,
+.email-link .roll__line {
+  height: 1.1em;
 }
 
 /* --- Scroll reveal (text slides up out of a mask as each block enters view;

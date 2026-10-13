@@ -10,8 +10,17 @@ const MARK_RE = /^(.*?)(\{\d+\})(.*)$/;
 // Footnotes that reveal a preview on hover.
 const FOOTNOTE_IMAGES: Record<string, FootnoteMedia> = {
   "1": { src: "/images/about-roman.png", ratio: 280 / 380 },
+  "2": {
+    src: ["fedoriv", "twid"].map((n) => `/images/footnote-agencies/${n}.webp`),
+    ratio: 1,
+  },
+  "3": {
+    src: ["noomo", "tbwa"].map((n) => `/images/footnote-agencies/${n}.webp`),
+    ratio: 1,
+  },
   "4": {
     src: "/images/footnote-denormalized.mp4",
+    poster: "/images/footnote-denormalized-poster.jpg",
     ratio: 560 / 448,
     href: "https://denormalized.co",
   },
