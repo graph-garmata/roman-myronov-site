@@ -1074,10 +1074,11 @@ a {
     height: 70.8vh;
   }
 
-  /* The email stays one box on one line: sized so its ~10em run fills the
-     width between the margins. */
+  /* The email is set like the "Any inquiries?" label above it, the two
+     reading as one block (as on About's mobile footer). */
   .contact-cta__email {
-    font-size: calc((100vw - 2 * var(--margin)) / 10.1);
+    font-size: var(--fs-heading);
+    letter-spacing: var(--track);
   }
 
   /* "Local Time" on one row — a single 5-col column is too narrow for it.
