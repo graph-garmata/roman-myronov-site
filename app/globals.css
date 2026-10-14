@@ -1005,7 +1005,9 @@ a {
 .contact-cta__email {
   height: 1.1em;
   padding-right: 0.04em;
-  font-size: clamp(3.25rem, 9vw, 156px);
+  /* Never wider than leaves room for the Privacy link on its line: the
+     ~10.1em run plus the link's ~90px, between the margins. */
+  font-size: min(9vw, 156px, calc((100vw - 2 * var(--margin) - 90px) / 10.1));
   line-height: 1;
   letter-spacing: -0.04em;
   text-decoration: none;
@@ -1038,14 +1040,7 @@ a {
   transform: translateY(0);
 }
 
-/* Narrower, the email (~0.9vw wide) leaves no room beside it, so the link
-   moves up to the label's row, sharing its foot line. */
-@media (max-width: 1100px) {
-  .contact-cta__privacy {
-    top: calc(var(--fs-heading) - var(--fs-body));
-    bottom: auto;
-  }
-}
+
 
 /* ============================================================
    Home — mobile (same grid tokens as .about's mobile breakpoint:
@@ -1101,9 +1096,12 @@ a {
   }
 
   /* The email is set like the "Any inquiries?" label above it, the two
-     reading as one block (as on About's mobile footer). */
+     reading as one block (as on About's mobile footer) — both a touch
+     under the heading size where that's what leaves the Privacy link room
+     on the email's line (its ~10.3em run plus ~80px). */
+  .contact-cta__label,
   .contact-cta__email {
-    font-size: var(--fs-heading);
+    font-size: min(var(--fs-heading), calc((100vw - 2 * var(--margin) - 80px) / 10.3));
     letter-spacing: var(--track);
   }
 

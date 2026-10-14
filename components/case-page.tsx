@@ -415,7 +415,7 @@ export default function CasePage({ study }: { study: CaseStudy }) {
         )}
 
         <span className="case-label case-label--problem">
-          <Reveal delay={0.12}>Problem</Reveal>
+          <Reveal delay={0.12}>Intro</Reveal>
         </span>
         <div className="case-desc" ref={descRef}>
           <RevealLines text={study.problem} baseDelay={0.18} step={0.04} />
