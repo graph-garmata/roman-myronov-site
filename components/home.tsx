@@ -35,11 +35,17 @@ const archiveItems = [
 const contactLinks: {
   label: string;
   href: string;
-  download?: boolean;
+  /** Downloads instead of opening, saved under this file name. */
+  download?: string;
   direction?: "down";
 }[] = [
   { label: "LinkedIn", href: "https://www.linkedin.com/in/roman-myronov/" },
-  { label: "CV", href: "/cv.pdf", download: true, direction: "down" },
+  {
+    label: "CV",
+    href: "/cv.pdf",
+    download: "Roman Myronov CV 2026.pdf",
+    direction: "down",
+  },
   { label: "Behance", href: "https://www.behance.net/graph_garmata" },
   { label: "Instagram", href: "https://www.instagram.com/graph_garmata/" },
   { label: "Denormalized", href: "https://denormalized.co" },
@@ -528,7 +534,7 @@ export default function Home() {
                 className="cases__item"
                 tabIndex={contactOpen ? 0 : -1}
                 {...(link.download
-                  ? { download: true }
+                  ? { download: link.download }
                   : { target: "_blank", rel: "noreferrer" })}
               >
                 <span className="cases__item-inner">
