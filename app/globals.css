@@ -1021,6 +1021,32 @@ a {
   transform: translateY(0);
 }
 
+/* Plain copy, no box: pinned to the content's bottom-right corner, its
+   foot on the same line as the email box's. */
+.contact-cta__privacy {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: var(--fs-body);
+  line-height: 1;
+  letter-spacing: var(--track);
+  color: #000000;
+  text-decoration: none;
+}
+
+.contact-cta__privacy:hover .roll__inner {
+  transform: translateY(0);
+}
+
+/* Narrower, the email (~0.9vw wide) leaves no room beside it, so the link
+   moves up to the label's row, sharing its foot line. */
+@media (max-width: 1100px) {
+  .contact-cta__privacy {
+    top: calc(var(--fs-heading) - var(--fs-body));
+    bottom: auto;
+  }
+}
+
 /* ============================================================
    Home — mobile (same grid tokens as .about's mobile breakpoint:
    5 columns, 8/20 margin/gutter, 32px heading).
@@ -1897,6 +1923,54 @@ a {
   grid-column: 2 / -1;
 }
 
+/* --- Privacy notice (components/privacy-page): About's type, with the
+   legal copy at body size in About's two-column grid. --- */
+.privacy {
+  position: relative;
+}
+
+/* Top-right corner, level with the Home link; scrolls away with the page. */
+.privacy__updated {
+  position: absolute;
+  top: var(--margin);
+  right: var(--margin);
+  padding-left: 0;
+}
+
+.privacy__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 52px;
+}
+
+.privacy__row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  column-gap: var(--gutter);
+}
+
+.privacy__label {
+  grid-column: 1 / span 2;
+  padding-left: 0;
+  font-weight: 400;
+}
+
+.privacy__text {
+  grid-column: 3 / span 3;
+  margin: 0;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: var(--fs-body);
+  line-height: 1.25;
+  letter-spacing: var(--track);
+}
+
+.privacy__text a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+
 /* --- Contact --- */
 .about-contact {
   display: flex;
@@ -1956,6 +2030,16 @@ a {
   .about__inner {
     gap: 152px;
     padding-top: 100px;
+  }
+
+  .privacy__row {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .privacy__label,
+  .privacy__text {
+    grid-column: 1;
   }
 
   .about-section__title {

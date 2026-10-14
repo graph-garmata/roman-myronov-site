@@ -712,6 +712,15 @@ export default function Home() {
               <Roll chars>roman@denormalized.co</Roll>
             </Reveal>
           </a>
+          <Link
+            className="contact-cta__privacy"
+            href="/privacy"
+            tabIndex={contactOpen ? 0 : -1}
+          >
+            <Reveal key={`privacy-${contactRevealKey}`} delay={0.26}>
+              <Roll>Privacy</Roll>
+            </Reveal>
+          </Link>
         </div>
       </div>
 
