@@ -44,8 +44,8 @@ const luminar: CaseStudy = {
   name: "Luminar",
   scope: "Strategy, Naming, Verbal Identity, Visual Identity, Website",
   talents: [
-    { name: "Sam Tipikin", role: "Design Director" },
-    { name: "Olha Shevchuk", role: "Copywriter" },
+    { name: "Sam Tipikin", role: "Web Design" },
+    { name: "Olha Shevchuk", role: "Creative Copywriting" },
   ],
   problem:
     "The client came to us asking for a website. She was a volunteer delivering food, sourcing clothes, organizing events and small outings for elderly people who needed someone to show up for them. It was real, hands-on work, just without any structure behind it.",
@@ -353,12 +353,11 @@ const estyl: CaseStudy = {
   name: "Estyl",
   scope: "Strategy, Branding, Verbal Identity, App Design",
   talents: [
-    { name: "Sam Tipikin", role: "Design Director, UI/UX Designer" },
-    { name: "Roman Myronov", role: "Design Director, Brand Designer" },
-    { name: "Ann Datsiuk", role: "Illustrator" },
-    { name: "Olha Shevchuk", role: "Creative Copywriter" },
-    { name: "Ivan Hrankin", role: "Brand Strategist" },
-    { name: "Maryna Mishchenko", role: "Jr. Designer" },
+    { name: "Sam Tipikin", role: "UI/UX Design" },
+    { name: "Ann Datsiuk", role: "Illustration" },
+    { name: "Olha Shevchuk", role: "Creative Copywriting" },
+    { name: "Ivan Hrankin", role: "Brand Strategy" },
+    { name: "Maryna Mishchenko", role: "Design" },
   ],
   problem:
     "People want help getting dressed that feels personal, not transactional. They need a way to work with the clothes they already own, express a specific vibe, and feel understood.",
@@ -831,7 +830,7 @@ const prostir: CaseStudy = {
   slug: "prostir",
   name: "Prostir",
   scope: "Strategy, Naming, Visual Identity, Website",
-  talents: [{ name: "Roman Myronov", role: "Design Director" }],
+  talents: [],
   problem:
     "Prostir is a network of youth hubs in Kremenchuk, Nizhyn, and Kamianske — created to support young people in rebuilding their communities.",
   blocks: [
@@ -1102,10 +1101,9 @@ const specialty: CaseStudy = {
   name: "Specialty",
   scope: "Strategy, Verbal Identity, Visual Identity, Packaging",
   talents: [
-    { name: "Roman Myronov", role: "Art Director, Designer" },
-    { name: "Ann Datsiuk", role: "Designer, Illustrator" },
-    { name: "Olha Shevchuk", role: "Creative Copywriter" },
-    { name: "Ivan Hrankin", role: "Brand Strategist" },
+    { name: "Ann Datsiuk", role: "Design, Illustration" },
+    { name: "Olha Shevchuk", role: "Creative Copywriting" },
+    { name: "Ivan Hrankin", role: "Brand Strategy" },
     { name: "Serge Sprenne, Anastasiia Kushnarenko", role: "Motion Design" },
   ],
   problem:
@@ -1378,10 +1376,9 @@ const genie: CaseStudy = {
   name: "Genie",
   scope: "Brand Identity, Product Design, Motion",
   talents: [
-    { name: "Sam Tipikin", role: "Design Director, Product" },
-    { name: "Roman Myronov", role: "Creative Director" },
-    { name: "Roman Danyliuk", role: "Motion Designer" },
-    { name: "Yuliia Lunina", role: "UI/UX Designer" },
+    { name: "Sam Tipikin", role: "Product Design" },
+    { name: "Roman Danyliuk", role: "Motion Design" },
+    { name: "Yuliia Lunina", role: "UI/UX Design" },
   ],
   problem:
     "Genie had a product that worked and a brand that was still missing a piece — an app that made sense of scattered health data, in an experience that was purely functional.",
@@ -1746,7 +1743,7 @@ const volta: CaseStudy = {
   slug: "volta",
   name: "Volta",
   scope: "Strategy, Visual Identity, Communication",
-  talents: [{ name: "Roman Myronov", role: "Design Director" }],
+  talents: [],
   problem:
     "Volta Buro is a real estate marketing buro with a mission to power up real estate — charging developers' businesses with brands, integrated marketing and customised technology.",
   blocks: [

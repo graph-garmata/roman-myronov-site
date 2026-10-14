@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import Reveal from "@/components/reveal";
+import { splitWords } from "@/lib/typography";
 
 /**
  * RevealLines — reveals wrapping text one visual row at a time. It measures
@@ -19,7 +20,7 @@ export default function RevealLines({
 }) {
   const measureRef = useRef<HTMLSpanElement>(null);
   const [lines, setLines] = useState<string[] | null>(null);
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = splitWords(text);
 
   useLayoutEffect(() => {
     const el = measureRef.current;
@@ -68,7 +69,7 @@ export default function RevealLines({
       </span>
       {lines === null ? (
         <span className="reveal-lines__pending" aria-hidden>
-          {text}
+          {words.join(" ")}
         </span>
       ) : (
         lines.map((line, i) => (

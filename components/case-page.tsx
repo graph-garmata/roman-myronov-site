@@ -398,16 +398,21 @@ export default function CasePage({ study }: { study: CaseStudy }) {
           <RevealLines text={study.scope} baseDelay={0.1} step={0.05} />
         </p>
 
-        <span className="case-label case-label--talents">
-          <Reveal delay={0.12}>Talents involved</Reveal>
-        </span>
-        <div className="case-talents" ref={talentsRef}>
-          {study.talents.map((t, i) => (
-            <Reveal key={t.name} delay={0.18 + i * 0.05}>
-              {t.name} ({t.role})
-            </Reveal>
-          ))}
-        </div>
+        {/* A solo case credits no one else, so it has no talents section. */}
+        {study.talents.length > 0 && (
+          <>
+            <span className="case-label case-label--talents">
+              <Reveal delay={0.12}>Talents involved</Reveal>
+            </span>
+            <div className="case-talents" ref={talentsRef}>
+              {study.talents.map((t, i) => (
+                <Reveal key={t.name} delay={0.18 + i * 0.05}>
+                  {t.name} ({t.role})
+                </Reveal>
+              ))}
+            </div>
+          </>
+        )}
 
         <span className="case-label case-label--problem">
           <Reveal delay={0.12}>Problem</Reveal>

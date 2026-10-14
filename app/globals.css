@@ -1271,7 +1271,7 @@ a {
   align-self: start;
   font-size: 14px;
   line-height: 16px;
-  letter-spacing: var(--track);
+  letter-spacing: 0;
 }
 
 .case-label--talents {
@@ -1459,7 +1459,7 @@ a {
   font-family: var(--font-lay), sans-serif;
   font-size: 14px;
   line-height: 16px;
-  letter-spacing: var(--track);
+  letter-spacing: 0;
 }
 
 .case-block__text {
@@ -1800,7 +1800,7 @@ a {
   padding-left: 52px;
   font-size: 14px;
   line-height: 16px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 /* --- Intro --- */

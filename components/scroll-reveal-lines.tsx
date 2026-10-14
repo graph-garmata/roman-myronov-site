@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import FootnoteImage, { type FootnoteMedia } from "@/components/footnote-image";
+import { splitWords } from "@/lib/typography";
 
 // Matches a word carrying an inline footnote marker, e.g. "studios{2},"
 // -> prefix "studios", mark "{2}", suffix ",".
@@ -70,7 +71,7 @@ export default function ScrollRevealLines({
   const measureRef = useRef<HTMLSpanElement>(null);
   const [lines, setLines] = useState<string[][] | null>(null);
   const [shown, setShown] = useState(false);
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = splitWords(text);
 
   useLayoutEffect(() => {
     const el = measureRef.current;
@@ -146,7 +147,7 @@ export default function ScrollRevealLines({
       </span>
       {lines === null ? (
         <span className="reveal-lines__pending" aria-hidden>
-          {text}
+          {words.join(" ")}
         </span>
       ) : (
         lines.map((line, i) => (
