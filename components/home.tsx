@@ -42,8 +42,8 @@ const contactLinks: {
   { label: "LinkedIn", href: "https://www.linkedin.com/in/roman-myronov/" },
   {
     label: "CV",
-    href: "/cv.pdf",
-    download: "Roman Myronov CV 2026.pdf",
+    href: "/Roman_Myronov_CV_2026.pdf",
+    download: "Roman_Myronov_CV_2026.pdf",
     direction: "down",
   },
   { label: "Behance", href: "https://www.behance.net/graph_garmata" },

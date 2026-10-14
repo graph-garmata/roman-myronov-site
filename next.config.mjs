@@ -1,18 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // The CV saves under a proper name however it's reached — some browsers
-  // ignore the link's `download` file name and fall back to "cv.pdf".
-  async headers() {
+  // The CV's file name is what it saves under (Vercel names static files
+  // after their path, overriding the link's `download` name), so the file
+  // carries the full name; the old short path still leads to it.
+  async redirects() {
     return [
-      {
-        source: "/cv.pdf",
-        headers: [
-          {
-            key: "Content-Disposition",
-            value: 'attachment; filename="Roman Myronov CV 2026.pdf"',
-          },
-        ],
-      },
+      { source: "/cv.pdf", destination: "/Roman_Myronov_CV_2026.pdf", permanent: false },
     ];
   },
 };
